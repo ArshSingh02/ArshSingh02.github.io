@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>VVI Pacemaker | Arsh Singh</title>
+
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="nav-name">
+            <a href="../index.html">Arsh Singh</a>
+        </div>
+
+        <div class="nav-links">
+            <a href="../index.html">About</a>
+            <a class="active" href="../projects.html">Projects</a>
+            <a href="../experience.html">Experience</a>
+            <a href="../cv.pdf" target="_blank">CV</a>
+        </div>
+
+    </nav>
+
+
+    <main class="page-container">
+
+        <a href="../projects.html" class="back-link">
+            ← Back to Projects
+        </a>
+
+
+        <h1 class="page-title">
+            VVI Pacemaker
+        </h1>
+
+        <p class="date">
+            April 2024
+        </p>
+
+        <p class="project-tech">
+            Arduino • C/C++ • ECG • Analog Circuits • Signal Processing
+        </p>
+
+
+        <section class="detail-section">
+
+            <h2>Overview</h2>
+
+            <p>
+                Built a VVI pacemaker capable of sensing cardiac activity
+                and delivering pacing pulses when the detected heart rate
+                falls below a defined threshold.
+            </p>
+
+            <p>
+                The project combined analog ECG signal conditioning with
+                embedded software for heartbeat detection, heart-rate
+                computation, pacing control, and event recording.
+            </p>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h2>ECG Sensing Circuit</h2>
+
+            <p>
+                Designed an ECG sensing circuit using analog amplification
+                and RC band-pass filtering to isolate heartbeat-related
+                signals from the raw ECG waveform.
+            </p>
+
+            <p>
+                The conditioned signal was provided to the microcontroller
+                for digital sampling and heartbeat detection.
+            </p>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h2>Heartbeat Detection</h2>
+
+            <p>
+                Programmed an Arduino to continuously sample the conditioned
+                ECG signal and identify cardiac events.
+            </p>
+
+            <p>
+                Detected beats were used to calculate the patient's heart
+                rate in real time.
+            </p>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h2>Pacing Control</h2>
+
+            <p>
+                Implemented VVI pacing logic that monitors detected heartbeats
+                and delivers a pacing pulse when no intrinsic ventricular beat
+                is detected within the required timing interval.
+            </p>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h2>Performance</h2>
+
+            <p>
+                The embedded system performed ECG sampling, heart-rate
+                calculation, pacing control, and cardiac-event recording
+                with less than 1% measurement error.
+            </p>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>

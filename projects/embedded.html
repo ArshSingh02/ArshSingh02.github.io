@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Embedded ECG & Temperature Monitor | Arsh Singh</title>
+
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="nav-name">
+            <a href="../index.html">Arsh Singh</a>
+        </div>
+
+        <div class="nav-links">
+            <a href="../index.html">About</a>
+            <a class="active" href="../projects.html">Projects</a>
+            <a href="../experience.html">Experience</a>
+            <a href="../cv.pdf" target="_blank">CV</a>
+        </div>
+
+    </nav>
+
+
+    <main class="page-container">
+
+        <a href="../projects.html" class="back-link">
+            ← Back to Projects
+        </a>
+
+
+        <h1 class="page-title">
+            Embedded ECG &amp; Temperature Monitor
+        </h1>
+
+        <p class="date">
+            May 2025
+        </p>
+
+        <p class="project-tech">
+            C • Zephyr RTOS • BLE • ADC • I²C • PWM • Embedded Systems
+        </p>
+
+
+        <section class="detail-section">
+
+            <h2>Overview</h2>
+
+            <p>
+                Developed an embedded physiological monitoring system using
+                C and Zephyr RTOS for real-time ECG acquisition, heart-rate
+                computation, temperature sensing, battery monitoring, and
+                wireless communication.
+            </p>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h2>ECG Acquisition</h2>
+
+            <p>
+                Developed firmware to sample ECG signals through the
+                microcontroller's ADC and process the incoming samples in
+                real time to calculate heart rate.
+            </p>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h2>Real-Time Software Architecture</h2>
+
+            <p>
+                Implemented an event-driven state machine using Zephyr RTOS
+                threads, timers, and kernel events to coordinate sensor
+                acquisition and system control flow.
+            </p>
+
+            <p>
+                This architecture allowed sensing, processing, communication,
+                and system-status operations to execute concurrently while
+                maintaining predictable system behavior.
+            </p>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h2>Sensors and System Monitoring</h2>
+
+            <p>
+                Integrated an I²C temperature sensor alongside battery
+                monitoring functionality.
+            </p>
+
+            <p>
+                PWM-controlled LEDs provided real-time feedback for device
+                status and error conditions.
+            </p>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h2>Bluetooth Low Energy</h2>
+
+            <p>
+                Built a Bluetooth Low Energy communication stack to transmit
+                heart rate, temperature, and system status to external devices.
+            </p>
+
+            <p>
+                The implementation used both standard and custom GATT services
+                to expose physiological measurements and device-specific status
+                information.
+            </p>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>
