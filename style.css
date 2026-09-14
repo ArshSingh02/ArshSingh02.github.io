@@ -22,7 +22,7 @@ body {
     justify-content: space-between;
     align-items: center;
 
-    padding: 24px 8%;
+    padding: 24px 5%;
 
     border-bottom: 1px solid #e5e5e5;
     background-color: white;
@@ -60,24 +60,24 @@ body {
 /* Main page layout */
 
 .page-container {
-    width: 84%;
-    max-width: 1000px;
+    width: 92%;
+    max-width: 1400px;
 
     margin: 0 auto;
-    padding: 80px 0;
+    padding: 70px 0;
 }
 
 .page-title {
     font-size: 46px;
-    margin-bottom: 60px;
+    margin-bottom: 55px;
 }
 
 
 /* About */
 
 .hero {
-    max-width: 750px;
-    padding-top: 60px;
+    max-width: 1100px;
+    padding-top: 40px;
 }
 
 .hero h1 {
@@ -91,15 +91,57 @@ body {
 }
 
 
-/* Projects */
+/* Education */
 
-.project {
-    margin-bottom: 70px;
+.education-section {
+    margin-top: 80px;
+    padding-bottom: 60px;
+    max-width: 1100px;
 }
 
-.project h2 {
+.education-section h1 {
+    font-size: 40px;
+    margin-bottom: 40px;
+}
+
+.education-item {
+    margin-bottom: 35px;
+}
+
+.education-item h2 {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.education-degree {
+    font-size: 18px;
+    margin: 0;
+}
+
+.education-item .date {
+    margin-top: 5px;
+}
+
+
+/* Projects */
+
+.project-item {
+    max-width: 1150px;
+    margin-bottom: 55px;
+}
+
+.project-item h2 {
     font-size: 28px;
     margin-bottom: 5px;
+}
+
+.project-title-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.project-title-link:hover {
+    text-decoration: underline;
 }
 
 .project-tech {
@@ -112,7 +154,8 @@ body {
 /* Experience */
 
 .experience-item {
-    margin-bottom: 70px;
+    max-width: 1150px;
+    margin-bottom: 55px;
 }
 
 .experience-item h2 {
@@ -127,9 +170,46 @@ body {
     font-weight: 500;
 }
 
+.experience-title-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.experience-title-link:hover {
+    text-decoration: underline;
+}
+
+
+/* Dates */
+
 .date {
     color: #666;
     font-size: 15px;
+}
+
+
+/* Detailed project / experience pages */
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 30px;
+
+    color: #666;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: #000;
+}
+
+.detail-section {
+    max-width: 1150px;
+    margin-bottom: 50px;
+}
+
+.detail-section h2 {
+    font-size: 26px;
+    margin-bottom: 15px;
 }
 
 
@@ -141,6 +221,8 @@ body {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
+
+        padding: 20px 6%;
     }
 
     .nav-links {
@@ -153,11 +235,19 @@ body {
         padding-top: 50px;
     }
 
+    .hero {
+        padding-top: 20px;
+    }
+
     .hero h1 {
         font-size: 40px;
     }
 
     .page-title {
         font-size: 38px;
+    }
+
+    .education-section h1 {
+        font-size: 34px;
     }
 }
