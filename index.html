@@ -8,6 +8,10 @@
     <title>Arsh Singh | About</title>
 
     <link rel="stylesheet" href="style.css">
+
+    <!-- Font Awesome for social/contact icons -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
 <body>
@@ -28,59 +32,156 @@
     </nav>
 
 
-    <main class="page-container">
+    <main class="about-container">
 
-        <section class="hero">
+        <!-- LEFT SIDE -->
+        <aside class="profile-column">
 
-            <h1>Hi, I'm Arsh Singh.</h1>
+            <img
+                src="ArshProfPhoto.JPG"
+                alt="Arsh Singh"
+                class="profile-photo"
+            >
 
-            <p class="intro">
-                I'm a master's student in Electrical and Computer Engineering
-                at Carnegie Mellon University with interests in robotics,
-                machine learning, autonomous systems, and intelligent control.
+            <h1 class="profile-name">Arsh Singh</h1>
+
+            <p class="profile-subtitle">
+                M.S. Electrical & Computer Engineering
             </p>
 
-            <p>
-                My work spans robot perception, navigation, reinforcement learning,
-                biomedical machine learning, and computational neuroscience.
-                I enjoy building systems that connect machine learning algorithms
-                with real-world hardware.
+            <p class="profile-school">
+                Carnegie Mellon University
             </p>
 
-        </section>
+
+            <div class="profile-links">
+
+                <a href="mailto:YOUR_EMAIL"
+                   aria-label="Email">
+                    <i class="fa-solid fa-envelope"></i>
+                </a>
+
+                <a href="YOUR_LINKEDIN"
+                   target="_blank"
+                   aria-label="LinkedIn">
+                    <i class="fa-brands fa-linkedin"></i>
+                </a>
+
+                <a href="YOUR_GITHUB"
+                   target="_blank"
+                   aria-label="GitHub">
+                    <i class="fa-brands fa-github"></i>
+                </a>
+
+            </div>
+
+        </aside>
 
 
-        <section class="education-section">
+        <!-- RIGHT SIDE -->
+        <section class="biography-column">
 
-            <h1>Education</h1>
+            <h1 class="biography-title">Biography</h1>
 
+            <div class="biography-text">
 
-            <div class="education-item">
-
-                <h2>Carnegie Mellon University</h2>
-
-                <p class="education-degree">
-                    M.S. Electrical and Computer Engineering
+                <p>
+                    Hi! I am a master's student in
+                    <strong>Electrical and Computer Engineering</strong> at
+                    <a href="https://www.cmu.edu/" target="_blank">
+                        Carnegie Mellon University
+                    </a>.
+                    My interests lie at the intersection of robotics,
+                    machine learning, autonomous systems, and intelligent control.
                 </p>
 
-                <p class="date">
-                    January 2026 - December 2027
+                <p>
+                    I am particularly interested in building learning-based
+                    robotic systems that can perceive their environment,
+                    make intelligent decisions, and operate autonomously in
+                    the real world. My work has involved robot perception,
+                    mapping, navigation, reinforcement learning, and
+                    computer vision.
+                </p>
+
+                <p>
+                    I have also worked on machine learning problems in
+                    biomedical engineering and computational neuroscience,
+                    including neural modeling and decoding human movement
+                    from high-density EMG signals.
+                </p>
+
+                <p>
+                    I enjoy developing systems that bridge machine learning
+                    algorithms with real-world hardware, and I am especially
+                    interested in robot learning, autonomous robotics, and
+                    intelligent embodied systems.
                 </p>
 
             </div>
 
 
-            <div class="education-item">
+            <!-- BOTTOM INFORMATION -->
+            <div class="about-details">
 
-                <h2>Duke University</h2>
+                <div class="interests">
 
-                <p class="education-degree">
-                    B.S.E. Biomedical Engineering / Minor in Computer Science
-                </p>
+                    <h2>Interests</h2>
 
-                <p class="date">
-                    August 2021 - May 2025
-                </p>
+                    <ul>
+                        <li>Robot Learning</li>
+                        <li>Autonomous Robotics</li>
+                        <li>Computer Vision</li>
+                        <li>Reinforcement Learning</li>
+                        <li>Machine Learning</li>
+                    </ul>
+
+                </div>
+
+
+                <div class="education-summary">
+
+                    <h2>Education</h2>
+
+
+                    <div class="education-summary-item">
+
+                        <i class="fa-solid fa-graduation-cap"></i>
+
+                        <div>
+                            <h3>M.S. Electrical & Computer Engineering</h3>
+
+                            <p>
+                                Carnegie Mellon University
+                            </p>
+
+                            <span>
+                                2026 – 2027
+                            </span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="education-summary-item">
+
+                        <i class="fa-solid fa-graduation-cap"></i>
+
+                        <div>
+                            <h3>B.S.E. Biomedical Engineering</h3>
+
+                            <p>
+                                Duke University
+                            </p>
+
+                            <span>
+                                2021 – 2025
+                            </span>
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
 
