@@ -394,7 +394,21 @@ a {
 }
 
 
-.experience-item h2,
+/* Experience employer / lab name */
+
+.experience-item h2 {
+    margin: 0 0 18px;
+
+    font-size: 2rem;
+
+    font-weight: 600;
+
+    line-height: 1.25;
+}
+
+
+/* Keep project title styling unchanged */
+
 .project-item h2 {
     margin-bottom: 8px;
 
@@ -442,6 +456,104 @@ a {
 
 .experience-title-link:hover .experience-arrow {
     transform: translateX(5px);
+}
+
+
+/* Role + date / location row */
+
+.experience-meta {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: baseline;
+
+    gap: 30px;
+
+    margin-bottom: 18px;
+}
+
+
+.experience-meta h3 {
+    margin: 0;
+
+    font-size: 1.3rem;
+
+    font-weight: 600;
+
+    line-height: 1.4;
+
+    color: #ffffff;
+}
+
+
+.experience-meta .date {
+    margin: 0;
+
+    flex-shrink: 0;
+
+    font-size: 0.9rem;
+
+    line-height: 1.4;
+
+    color: #8e96a3;
+
+    text-align: right;
+}
+
+
+/* Experience description */
+
+.experience-item > p {
+    margin: 0;
+
+    font-size: 1.05rem;
+
+    line-height: 1.55;
+
+    color: #ffffff;
+}
+
+
+/* Experience skills */
+
+.experience-item .skills {
+    margin-top: 12px;
+
+    font-size: 0.95rem;
+
+    font-weight: 500;
+
+    line-height: 1.5;
+
+    color: #9da4b3;
+}
+
+
+/* Experience publication / repository links */
+
+.experience-item .experience-links {
+    margin-top: 12px;
+
+    font-size: 0.95rem;
+
+    line-height: 1.6;
+
+    color: #9da4b3;
+}
+
+
+.experience-links a {
+    color: #ffffff;
+
+    text-decoration: underline;
+
+    text-underline-offset: 3px;
+}
+
+
+.experience-links a:hover {
+    color: #cfd3dc;
 }
 
 
@@ -606,5 +718,36 @@ a {
 
     .page-title {
         font-size: 2.2rem;
+    }
+
+
+    .experience-item h2 {
+        font-size: 1.65rem;
+    }
+
+
+    .experience-meta {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 6px;
+
+        margin-bottom: 16px;
+    }
+
+
+    .experience-meta h3 {
+        font-size: 1.2rem;
+    }
+
+
+    .experience-meta .date {
+        text-align: left;
+    }
+
+
+    .experience-item > p {
+        font-size: 1rem;
     }
 }
