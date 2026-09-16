@@ -383,6 +383,29 @@ a {
     color: #ffffff;
 }
 
+.back-link {
+    display: inline-block;
+
+    margin-bottom: 36px;
+
+    font-size: 0.95rem;
+
+    color: #aeb5c0;
+
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: #ffffff;
+}
+
+.project-header .page-title {
+    margin-top: 0;
+    margin-bottom: 12px;
+
+    font-size: 3rem;
+    line-height: 1.1;
+}
 
 /* =========================================================
    EXPERIENCE / PROJECT ITEMS
