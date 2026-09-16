@@ -44,86 +44,697 @@
         </p>
 
         <p class="project-tech">
-            C • Zephyr RTOS • BLE • ADC • I²C • PWM • Embedded Systems
+            C • Zephyr RTOS • Bluetooth Low Energy • ADC • I²C • PWM • Embedded Systems
+        </p>
+
+        <p>
+            <a
+                href="https://github.com/ArshSingh02/ecg-temp-ble-project"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                View source code on GitHub →
+            </a>
         </p>
 
 
+        <!-- Introduction -->
+
         <section class="detail-section">
 
-            <h2>Overview</h2>
+            <h2>Building a Real-Time Physiological Monitor</h2>
 
             <p>
-                Developed an embedded physiological monitoring system using
-                C and Zephyr RTOS for real-time ECG acquisition, heart-rate
-                computation, temperature sensing, battery monitoring, and
-                wireless communication.
+                This project is an embedded physiological monitoring system that
+                combines ECG acquisition, heart-rate estimation, temperature sensing,
+                battery monitoring, Bluetooth communication, and device-status feedback
+                on a single microcontroller.
+            </p>
+
+            <p>
+                The firmware was written in C using Zephyr RTOS. The main challenge
+                was not simply interfacing with each peripheral independently, but
+                coordinating several subsystems with very different timing and
+                communication requirements.
+            </p>
+
+            <p>
+                ECG samples must be acquired consistently over time, temperature is
+                retrieved from a digital I²C sensor, battery voltage is sampled through
+                the ADC, Bluetooth operates asynchronously, and buttons and LEDs provide
+                a physical interface to the system.
+            </p>
+
+            <p>
+                I structured the firmware around an event-driven state machine running
+                on top of a real-time operating system. This allowed sensing,
+                processing, communication, timing, and error handling to remain
+                logically separated while still sharing the same processor.
             </p>
 
         </section>
 
 
+        <!-- Architecture -->
+
         <section class="detail-section">
 
-            <h2>ECG Acquisition</h2>
+            <h2>Firmware Architecture</h2>
 
             <p>
-                Developed firmware to sample ECG signals through the
-                microcontroller's ADC and process the incoming samples in
-                real time to calculate heart rate.
+                The firmware is organized around five primary operating states:
+                <strong>INIT</strong>, <strong>IDLE</strong>,
+                <strong>BATTERY</strong>, <strong>MEASURE</strong>, and
+                <strong>ERROR</strong>.
+            </p>
+
+            <p>
+                At startup, the system enters the INIT state, where hardware
+                peripherals, ADC channels, LEDs, Bluetooth, timers, and other system
+                resources are configured. Once initialization succeeds, execution
+                transitions into IDLE.
+            </p>
+
+            <p>
+                IDLE acts as the central waiting state. From there, asynchronous events
+                determine what the system does next. A periodic timer can trigger a
+                battery measurement, while user input can initiate a physiological
+                measurement sequence.
+            </p>
+
+            <p>
+                Errors from hardware initialization, sensing, ADC acquisition, or
+                Bluetooth communication redirect execution into a dedicated ERROR
+                state rather than allowing the system to continue in an undefined
+                condition.
+            </p>
+
+
+            <figure class="project-figure">
+
+                <img
+                    src="images/embedded/state_diagram.png"
+                    alt="State diagram for the embedded ECG and temperature monitoring firmware"
+                >
+
+                <figcaption>
+                    Figure 1. Event-driven firmware state machine coordinating
+                    initialization, physiological measurement, battery monitoring,
+                    and error recovery.
+                </figcaption>
+
+            </figure>
+
+        </section>
+
+
+        <!-- RTOS -->
+
+        <section class="detail-section">
+
+            <h2>Why Use a Real-Time Operating System?</h2>
+
+            <p>
+                A real-time operating system, or RTOS, provides scheduling,
+                synchronization, timing, and communication mechanisms for software
+                that must respond predictably to events. Unlike a simple
+                super-loop architecture, an RTOS allows multiple logical tasks to
+                make progress independently while the scheduler determines when each
+                should execute.
+            </p>
+
+            <p>
+                That model fits this project because the device has several operations
+                with different timing requirements. ECG acquisition is
+                timing-sensitive, battery measurements happen periodically,
+                Bluetooth events occur asynchronously, and user inputs can arrive at
+                any time.
+            </p>
+
+            <p>
+                Zephyr RTOS provides the infrastructure that coordinates these
+                activities. Rather than manually implementing scheduling and timing
+                inside one large loop, the firmware can rely on kernel abstractions
+                such as threads, timers, events, and work queues.
             </p>
 
         </section>
 
 
+        <!-- Kernel -->
+
         <section class="detail-section">
 
-            <h2>Real-Time Software Architecture</h2>
+            <h2>The RTOS Kernel</h2>
 
             <p>
-                Implemented an event-driven state machine using Zephyr RTOS
-                threads, timers, and kernel events to coordinate sensor
-                acquisition and system control flow.
+                The kernel is the core of an operating system responsible for managing
+                CPU execution and shared system resources. In an RTOS, the kernel
+                schedules threads, tracks timing, manages synchronization primitives,
+                and provides mechanisms for safely moving between asynchronous pieces
+                of software.
             </p>
 
             <p>
-                This architecture allowed sensing, processing, communication,
-                and system-status operations to execute concurrently while
-                maintaining predictable system behavior.
+                In this project, the Zephyr kernel sits between the application logic
+                and the microcontroller hardware. It provides the scheduling and
+                event mechanisms that allow the ECG, battery, Bluetooth, and system
+                control logic to operate without each subsystem having to directly
+                manage every other subsystem.
+            </p>
+
+            <p>
+                This separation is important because the firmware can focus on
+                application behavior while the kernel handles lower-level questions
+                such as when code executes and how asynchronous operations are
+                synchronized.
             </p>
 
         </section>
 
 
+        <!-- Threads -->
+
         <section class="detail-section">
 
-            <h2>Sensors and System Monitoring</h2>
+            <h2>Threads and Concurrent Execution</h2>
 
             <p>
-                Integrated an I²C temperature sensor alongside battery
-                monitoring functionality.
+                A thread is an independently schedulable sequence of instructions.
+                Multiple threads do not necessarily execute at exactly the same instant
+                on a single-core microcontroller, but the RTOS scheduler rapidly
+                switches between them so independent tasks can make progress without
+                being written as one monolithic routine.
             </p>
 
             <p>
-                PWM-controlled LEDs provided real-time feedback for device
-                status and error conditions.
+                Threads are useful when one subsystem needs to wait while another can
+                continue working. For example, communication or system-management logic
+                should not prevent time-sensitive sensing operations from progressing
+                simply because one portion of the firmware is waiting for an event.
+            </p>
+
+            <p>
+                Zephyr's execution model therefore lets the project separate
+                independent responsibilities while still sharing one CPU. The kernel
+                determines which work is ready to run and schedules execution
+                accordingly.
             </p>
 
         </section>
 
 
+        <!-- Events -->
+
         <section class="detail-section">
 
-            <h2>Bluetooth Low Energy</h2>
+            <h2>Event-Driven Control</h2>
 
             <p>
-                Built a Bluetooth Low Energy communication stack to transmit
-                heart rate, temperature, and system status to external devices.
+                An event represents something meaningful that has happened in the
+                system: a timer expired, a button was pressed, a measurement
+                completed, or an error occurred. Event-driven software reacts only
+                when those conditions occur rather than continuously checking every
+                possible condition.
             </p>
 
             <p>
-                The implementation used both standard and custom GATT services
-                to expose physiological measurements and device-specific status
-                information.
+                This project uses events to drive the firmware state machine. While
+                IDLE, the system waits until an event indicates that battery monitoring
+                or physiological measurement should begin.
+            </p>
+
+            <p>
+                The result is a cleaner control structure than repeatedly polling every
+                sensor and peripheral. Each event has a clear meaning and causes a
+                deliberate transition in system behavior.
+            </p>
+
+        </section>
+
+
+        <!-- Timers -->
+
+        <section class="detail-section">
+
+            <h2>Timers and Periodic Work</h2>
+
+            <p>
+                RTOS timers provide a way to schedule an action after a specified time
+                interval without forcing the processor to sit inside a blocking delay.
+                When the timer expires, the kernel can generate an event or schedule
+                work while other parts of the application continue to operate.
+            </p>
+
+            <p>
+                Battery monitoring is a good example. The battery does not need to be
+                sampled continuously, so a periodic timer triggers measurements at
+                appropriate intervals while the system otherwise remains available for
+                physiological sensing and Bluetooth communication.
+            </p>
+
+            <p>
+                Timers are also useful for device-status behavior because blinking LEDs
+                or other periodic indicators can be scheduled without embedding delay
+                loops throughout the application.
+            </p>
+
+        </section>
+
+
+        <!-- Interrupts -->
+
+        <section class="detail-section">
+
+            <h2>Interrupts and Asynchronous Inputs</h2>
+
+            <p>
+                An interrupt allows hardware to signal the processor immediately when
+                an event occurs instead of requiring software to repeatedly poll the
+                device. The processor temporarily transfers control to an interrupt
+                handler and then resumes normal execution.
+            </p>
+
+            <p>
+                This is particularly useful for user inputs and hardware events that
+                occur unpredictably. Rather than constantly checking whether a button
+                has changed state, the firmware can respond when the hardware signals
+                that an input occurred.
+            </p>
+
+            <p>
+                In an RTOS-based design, interrupt handlers are typically kept short.
+                Their job is often to record that an event occurred and allow normal
+                kernel-managed code to perform the larger amount of application work.
+            </p>
+
+        </section>
+
+
+        <!-- State Machine -->
+
+        <section class="detail-section">
+
+            <h2>Event-Driven State Machine</h2>
+
+            <p>
+                The state machine defines the high-level behavior of the device,
+                while the RTOS provides the mechanisms needed to execute that behavior.
+                These are related concepts, but they solve different problems.
+            </p>
+
+            <p>
+                The RTOS controls <em>when</em> pieces of software execute. The state
+                machine controls <em>what</em> the system is allowed to do at a
+                particular point in time.
+            </p>
+
+            <p>
+                For example, while the system is in IDLE, it can accept an event that
+                starts physiological measurement or an event that requests battery
+                monitoring. Once the system enters MEASURE, the firmware follows the
+                physiological measurement sequence before returning to IDLE.
+            </p>
+
+            <p>
+                Combining kernel-managed events with explicit application states keeps
+                the control flow predictable even as the number of peripherals and
+                asynchronous inputs increases.
+            </p>
+
+        </section>
+
+
+        <!-- ADC -->
+
+        <section class="detail-section">
+
+            <h2>Acquiring ECG Through the ADC</h2>
+
+            <p>
+                An analog-to-digital converter, or ADC, converts a continuously varying
+                voltage into a numerical value that software can process. ADCs are
+                fundamental to embedded systems because many physical sensors produce
+                analog electrical signals even though the processor operates digitally.
+            </p>
+
+            <p>
+                ECG is one such signal. The electrical waveform must be sampled at
+                consistent intervals so its temporal structure is preserved before the
+                firmware can estimate heart rate.
+            </p>
+
+            <p>
+                A measurement window of approximately 30 seconds is collected and
+                processed to estimate average BPM. Performing this processing on the
+                microcontroller means the BLE client receives a useful physiological
+                measurement rather than needing to interpret the raw waveform itself.
+            </p>
+
+        </section>
+
+
+        <!-- Heart Rate -->
+
+        <section class="detail-section">
+
+            <h2>From ECG Samples to Heart Rate</h2>
+
+            <p>
+                ECG signals contain repeating cardiac cycles. Heart rate can therefore
+                be estimated by identifying successive beats and determining how
+                frequently they occur within the measurement interval.
+            </p>
+
+            <p>
+                The embedded processing pipeline converts the sampled waveform into an
+                average heart-rate measurement in beats per minute. That result is then
+                passed to the Bluetooth subsystem for transmission to an external
+                device.
+            </p>
+
+            <p>
+                I validated the complete measurement chain by comparing heart-rate
+                values transmitted over Bluetooth against known reference heart rates,
+                rather than testing the processing algorithm in isolation.
+            </p>
+
+
+            <figure class="project-figure">
+
+                <img
+                    src="images/embedded/heart_rate_validation.png"
+                    alt="Measured Bluetooth heart rate compared with reference heart rate"
+                >
+
+                <figcaption>
+                    Figure 2. Embedded heart-rate measurements transmitted over
+                    Bluetooth compared with reference heart rates. The measured
+                    response closely follows the expected one-to-one relationship.
+                </figcaption>
+
+            </figure>
+
+        </section>
+
+
+        <!-- I2C -->
+
+        <section class="detail-section">
+
+            <h2>I²C and Temperature Sensing</h2>
+
+            <p>
+                I²C is a synchronous serial communication protocol commonly used to
+                connect microcontrollers to sensors and other low-speed peripherals.
+                Devices share clock and data lines, while addresses allow multiple
+                peripherals to coexist on the same bus.
+            </p>
+
+            <p>
+                The project uses an MCP9808 digital temperature sensor connected
+                through I²C. Unlike the ECG signal, the microcontroller does not need
+                to digitize the temperature measurement directly because the sensor
+                performs the conversion internally.
+            </p>
+
+            <p>
+                The firmware communicates with the MCP9808 through its registers,
+                retrieves the digital temperature value, and incorporates that result
+                into the same measurement pipeline used for Bluetooth reporting.
+            </p>
+
+        </section>
+
+
+        <!-- Measurement Flow -->
+
+        <section class="detail-section">
+
+            <h2>The Measurement Pipeline</h2>
+
+            <p>
+                When a physiological measurement is requested, the firmware transitions
+                from IDLE into the MEASURE state.
+            </p>
+
+            <p>
+                The system prepares the ECG and temperature interfaces and verifies that
+                the required peripherals are ready. ECG data is then sampled over the
+                acquisition window and processed into an average BPM, while the MCP9808
+                provides the corresponding temperature measurement.
+            </p>
+
+            <p>
+                Once the measurements have been acquired and processed, the resulting
+                values are passed to the Bluetooth subsystem for communication.
+            </p>
+
+            <p>
+                Conceptually, the two main sensing paths are:
+            </p>
+
+            <p>
+                <strong>
+                    ECG Signal → ADC → Sampling → Heart-Rate Processing → BLE
+                </strong>
+            </p>
+
+            <p>
+                and:
+            </p>
+
+            <p>
+                <strong>
+                    MCP9808 → I²C → Temperature Measurement → BLE
+                </strong>
+            </p>
+
+        </section>
+
+
+        <!-- BLE -->
+
+        <section class="detail-section">
+
+            <h2>Bluetooth Low Energy and GATT</h2>
+
+            <p>
+                Bluetooth Low Energy is designed for low-power wireless communication
+                between embedded devices and nearby clients such as smartphones or
+                computers. BLE applications commonly organize data through the Generic
+                Attribute Profile, or GATT, which represents information using services
+                and characteristics.
+            </p>
+
+            <p>
+                In this project, the monitor operates as a BLE peripheral. Heart rate
+                is exposed through the standard Heart Rate Service, battery state
+                through the Battery Service, and device metadata through the Device
+                Information Service.
+            </p>
+
+            <p>
+                Measurements that do not map directly onto a standard profile use custom
+                GATT characteristics. This allows temperature and firmware error
+                information to be communicated through the same structured BLE
+                interface.
+            </p>
+
+            <p>
+                Notifications allow the firmware to push new values to a connected
+                client when measurements change rather than forcing the client to
+                continuously request the latest value.
+            </p>
+
+        </section>
+
+
+        <!-- Battery -->
+
+        <section class="detail-section">
+
+            <h2>Battery Monitoring</h2>
+
+            <p>
+                Battery monitoring is implemented as an independent periodic subsystem.
+                An analog battery signal is sampled through a dedicated ADC input and
+                converted into a battery-level representation.
+            </p>
+
+            <p>
+                The first measurement occurs during initialization. A kernel timer then
+                triggers subsequent battery checks while the system is idle, allowing
+                monitoring to happen periodically without interfering with ECG
+                acquisition.
+            </p>
+
+            <p>
+                The resulting value is used by three different output paths: internal
+                firmware reporting, Bluetooth's Battery Service, and a PWM-controlled
+                LED that provides local visual feedback.
+            </p>
+
+
+            <figure class="project-figure">
+
+                <img
+                    src="images/embedded/battery_validation.png"
+                    alt="Battery measurement validation across PWM output, firmware logs, and Bluetooth"
+                >
+
+                <figcaption>
+                    Figure 3. Battery-monitoring validation across PWM output,
+                    internal firmware measurements, and Bluetooth transmission,
+                    demonstrating consistency across the complete sensing and
+                    communication path.
+                </figcaption>
+
+            </figure>
+
+        </section>
+
+
+        <!-- PWM -->
+
+        <section class="detail-section">
+
+            <h2>PWM and Hardware Feedback</h2>
+
+            <p>
+                Pulse-width modulation, or PWM, controls the average power delivered to
+                a device by rapidly switching a digital output on and off. Changing the
+                fraction of time the signal remains high—the duty cycle—allows software
+                to control effects such as LED brightness without requiring a true
+                analog output.
+            </p>
+
+            <p>
+                The battery-status LED uses PWM so its brightness can represent the
+                current battery level rather than simply reporting a binary
+                charged/not-charged state.
+            </p>
+
+            <p>
+                Following an ECG measurement, the system can also use timed LED behavior
+                to provide physical feedback corresponding to the calculated heart rate.
+                This turns a processed physiological measurement back into a directly
+                observable hardware output.
+            </p>
+
+        </section>
+
+
+        <!-- Validation -->
+
+        <section class="detail-section">
+
+            <h2>Validating the End-to-End System</h2>
+
+            <p>
+                Embedded-system testing becomes more meaningful when entire data paths
+                are validated rather than only individual functions.
+            </p>
+
+            <p>
+                For battery monitoring, I compared the ADC-derived measurement across
+                three independent outputs: the firmware's internal reporting, the PWM
+                output, and the value transmitted through Bluetooth. Agreement between
+                all three verifies that the measurement remains consistent as it moves
+                through the system.
+            </p>
+
+            <p>
+                Heart-rate validation followed the same philosophy. Known input heart
+                rates were compared with the results produced by the embedded processing
+                pipeline and finally transmitted over BLE.
+            </p>
+
+            <p>
+                These experiments therefore validated complete paths such as:
+            </p>
+
+            <p>
+                <strong>
+                    Physical Input → Peripheral → Firmware → Processing → Output
+                </strong>
+            </p>
+
+        </section>
+
+
+        <!-- Error Handling -->
+
+        <section class="detail-section">
+
+            <h2>Designing for Failure</h2>
+
+            <p>
+                In embedded systems, hardware operations can fail for reasons outside
+                normal application control: a peripheral may not initialize, a bus
+                transaction can fail, or a communication operation can return an error.
+                A robust system therefore needs a defined response to failure rather
+                than assuming every operation succeeds.
+            </p>
+
+            <p>
+                This firmware treats errors as an explicit application state.
+                Failures during initialization, ADC acquisition, temperature sensing,
+                or Bluetooth communication can generate an error event that transitions
+                the system into ERROR.
+            </p>
+
+            <p>
+                Normal timers and outputs can then be stopped, the fault can be
+                recorded, and error information can be exposed through Bluetooth.
+                Recovery occurs deliberately through a reset path that returns the
+                firmware to a known state.
+            </p>
+
+            <p>
+                Making failure handling part of the state machine keeps the system
+                deterministic even when hardware does not behave as expected.
+            </p>
+
+        </section>
+
+
+        <!-- Conclusion -->
+
+        <section class="detail-section">
+
+            <h2>Putting Everything Together</h2>
+
+            <p>
+                The completed system combines several core embedded-system concepts in
+                one application: an RTOS kernel, concurrent execution, timers, events,
+                interrupts, analog acquisition, digital communication, PWM, Bluetooth
+                Low Energy, signal processing, and explicit error recovery.
+            </p>
+
+            <p>
+                More importantly, each mechanism has a specific role. The RTOS kernel
+                schedules work, timers handle periodic behavior, events connect
+                asynchronous activity to the state machine, the ADC acquires analog
+                physiological signals, I²C interfaces with digital sensors, PWM drives
+                local feedback, and BLE exposes measurements to the outside world.
+            </p>
+
+            <p>
+                At a high level, the completed system can be viewed as:
+            </p>
+
+            <p>
+                <strong>
+                    Hardware → Peripheral Drivers → RTOS Kernel →
+                    Events / State Machine → Processing → BLE / Physical Output
+                </strong>
+            </p>
+
+            <p>
+                Building the project gave me experience thinking about embedded
+                software as a complete real-time system rather than as a collection of
+                independent peripheral drivers.
             </p>
 
         </section>
