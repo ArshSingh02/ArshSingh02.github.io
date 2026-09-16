@@ -35,412 +35,565 @@
         </a>
 
 
-        <h1 class="page-title">
-            VVI Pacemaker
-        </h1>
-
-        <p class="date">
-            April 2024
-        </p>
-
-        <p class="project-tech">
-            Arduino • C/C++ • ECG • Analog Circuits • Signal Processing • Embedded Systems
-        </p>
-
-
-        <!-- =====================================================
-             OVERVIEW
-             ===================================================== -->
-
-        <section class="detail-section">
-
-            <h2>Overview</h2>
-
-            <p>
-                I built a VVI pacemaker that could sense ventricular cardiac
-                activity, measure heart rate in real time, and deliver an
-                electrical pacing pulse when the heart's intrinsic rhythm
-                became too slow.
-            </p>
-
-            <p>
-                The system combined analog circuit design with embedded
-                software. A custom sensing circuit acquired and conditioned
-                the ECG, an Arduino processed detected R-waves and implemented
-                the pacing algorithm, and a transistor-based output stage
-                delivered controlled stimulation to cardiac tissue.
-            </p>
-
-            <p>
-                Because the device operated in VVI mode, ventricular activity
-                was both sensed and paced, while pacing was inhibited whenever
-                a natural ventricular beat occurred. This allowed the heart
-                to maintain its own rhythm whenever possible and only introduced
-                synthetic stimulation when the time since the previous beat
-                exceeded the programmed lower rate interval.
-            </p>
-
-        </section>
-
-
-        <!-- =====================================================
-             SYSTEM DESIGN
-             ===================================================== -->
-
-        <section class="detail-section">
-
-            <h2>Building the System</h2>
-
-            <p>
-                I divided the pacemaker into three primary stages:
-                <strong>sensing, processing, and stimulation</strong>.
-                Together, these stages created a closed-loop system that
-                continuously observed the ECG, decided whether intervention
-                was necessary, and generated a pacing pulse when required.
-            </p>
-
-
-            <h3>1. ECG Sensing and Signal Conditioning</h3>
-
-            <p>
-                Cardiac electrical signals are small and susceptible to noise,
-                so the first challenge was converting the raw ECG into a signal
-                that could be reliably interpreted by a microcontroller.
-            </p>
-
-            <p>
-                The sensing circuit began with an AD623 instrumentation amplifier
-                performing differential ECG acquisition. The signal then passed
-                through RC high-pass and low-pass filtering to suppress baseline
-                drift and high-frequency noise before being amplified to a
-                voltage range suitable for the Arduino.
-            </p>
-
-            <p>
-                A comparator converted each detected R-wave into a digital-like
-                pulse. This gave the microcontroller a clean indication of when
-                a ventricular contraction occurred without requiring the pacing
-                algorithm to identify every ECG feature directly in software.
-            </p>
-
-            <figure class="project-figure">
-                <img
-                    src="../images/pacemaker-sensing-circuit.png"
-                    alt="Complete ECG sensing circuit for the VVI pacemaker"
-                >
-
-                <figcaption>
-                    ECG sensing and conditioning circuit. The signal passes
-                    through differential amplification, filtering, additional
-                    amplification, and R-wave threshold detection.
-                    <em>Report Schematic 3.</em>
-                </figcaption>
-            </figure>
-
-
-            <h3>2. Embedded Heartbeat Detection</h3>
-
-            <p>
-                The conditioned ECG and comparator output were sampled by an
-                Arduino Nano. I configured the system for a sampling rate of
-                approximately 200 samples per second and used the elapsed time
-                between consecutive R-waves to calculate heart rate.
-            </p>
-
-            <p>
-                Each detected R-wave established the beginning of a new R-R
-                interval. The firmware measured this interval and converted it
-                into beats per minute, providing a continuously updated estimate
-                of the heart's intrinsic rate.
-            </p>
-
-            <figure class="project-figure">
-                <img
-                    src="../images/pacemaker-arduino-ecg.png"
-                    alt="Digitized ECG and R-wave comparator output measured by the Arduino"
-                >
-
-                <figcaption>
-                    ECG after digitization by the Arduino. The red signal shows
-                    the sampled ECG and the orange pulses indicate detected
-                    R-waves from the comparator.
-                    <em>Report Figure 3.</em>
-                </figcaption>
-            </figure>
-
-
-            <h3>3. VVI Pacing Algorithm</h3>
-
-            <p>
-                The central control parameter was the
-                <strong>lower rate interval (LRI)</strong>, which defines the
-                maximum amount of time the pacemaker allows between ventricular
-                beats.
-            </p>
-
-            <p>
-                For example, a minimum heart rate of 60 BPM corresponds to an
-                LRI of one second. Every natural R-wave resets this timer. If
-                another R-wave is detected before the interval expires, the
-                pacemaker does nothing. If the timer reaches the LRI without
-                detecting a natural beat, the Arduino generates a pacing command.
-            </p>
-
-            <p>
-                This inhibition behavior is important because the pacemaker
-                should not stimulate continuously. Instead, it supplements the
-                intrinsic rhythm only when the heart fails to produce a beat
-                quickly enough.
-            </p>
-
-            <figure class="project-figure">
-                <img
-                    src="../images/pacemaker-pacing-control.png"
-                    alt="ECG comparator and pacemaker stimulation output demonstrating VVI pacing"
-                >
-
-                <figcaption>
-                    VVI pacing behavior with a target rate of 120 BPM and an
-                    intrinsic ECG of 60 BPM. Synthetic pacing pulses occur
-                    between natural beats while detected intrinsic beats
-                    inhibit unnecessary stimulation.
-                    <em>Report Figure 5.</em>
-                </figcaption>
-            </figure>
-
-
-            <h3>4. Cardiac Stimulation Circuit</h3>
-
-            <p>
-                The Arduino itself was used as a controller rather than as the
-                direct stimulation source. Its digital pacing output controlled
-                an NPN transistor that acted as a switch for a capacitor-based
-                stimulation circuit.
-            </p>
-
-            <p>
-                When pacing was required, the circuit generated a sharp,
-                repeatable electrical pulse across the cardiac load. Based on
-                measurements made during the experiment, stimulation was
-                delivered at approximately twice the rheobase current and for
-                twice the measured chronaxie duration.
-            </p>
-
-            <p>
-                The resulting pacing pulse was approximately 0.5 mA for
-                40 ms, which was sufficient to initiate contraction of the
-                frog myocardium during testing.
-            </p>
-
-            <figure class="project-figure">
-                <img
-                    src="../images/pacemaker-stimulation-output.png"
-                    alt="Arduino control signal and electrical pacemaker stimulation pulse"
-                >
-
-                <figcaption>
-                    Electrical stimulation output. The Arduino command triggers
-                    the transistor-based output stage, producing a sharp and
-                    repeatable pacing pulse across the load.
-                    <em>Report Figure 7.</em>
-                </figcaption>
-            </figure>
-
-        </section>
-
-
-        <!-- =====================================================
-             MEMORY
-             ===================================================== -->
-
-        <section class="detail-section">
-
-            <h2>Persistent Cardiac Event Storage</h2>
-
-            <p>
-                I also implemented a diagnostic memory system using the Arduino's
-                EEPROM. The goal was to preserve useful information even after
-                the pacemaker lost power.
-            </p>
-
-            <p>
-                The software recorded events including natural heartbeats,
-                synthetic paced beats, arrhythmia events, event timing, and a
-                rolling segment of recent ECG measurements. Because EEPROM
-                capacity was limited, ECG samples were stored using a circular
-                buffer so that newer measurements replaced the oldest data.
-            </p>
-
-            <p>
-                Event type and timing information were encoded into designated
-                memory locations, allowing the device to reconstruct portions
-                of its activity after an experiment. During testing, stored
-                data could still be retrieved nine days after the original
-                cardiac experiment.
-            </p>
-
-            <figure class="project-figure">
-                <img
-                    src="../images/pacemaker-eeprom-events.png"
-                    alt="Pacemaker EEPROM output showing stored synthetic heartbeat events"
-                >
-
-                <figcaption>
-                    Diagnostic events recovered from EEPROM after testing,
-                    including the timestamps and total count of synthetic
-                    paced heartbeats.
-                    <em>Report Figure 9.</em>
-                </figcaption>
-            </figure>
-
-        </section>
-
-
-        <!-- =====================================================
-             RESULTS
-             ===================================================== -->
-
-        <section class="detail-section">
-
-            <h2>Results</h2>
-
-            <p>
-                Testing began by characterizing the complete ECG acquisition
-                circuit. The theoretical signal gain was approximately
-                -1160, while the experimentally measured gain was approximately
-                -1130, corresponding to a 2.6% difference.
-            </p>
-
-            <p>
-                The comparator reliably triggered on detected R-waves, allowing
-                the Arduino to estimate the R-R interval and calculate heart
-                rate. From 60 to 150 BPM, the measured average heart rate
-                remained within 0.31% of the expected value.
-            </p>
-
-            <table class="project-table">
-
-                <thead>
-                    <tr>
-                        <th>Expected HR</th>
-                        <th>Measured HR</th>
-                        <th>Error</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    <tr>
-                        <td>60 BPM</td>
-                        <td>59.8 BPM</td>
-                        <td>0.31%</td>
-                    </tr>
-
-                    <tr>
-                        <td>120 BPM</td>
-                        <td>119.8 BPM</td>
-                        <td>0.18%</td>
-                    </tr>
-
-                    <tr>
-                        <td>150 BPM</td>
-                        <td>149.6 BPM</td>
-                        <td>0.24%</td>
-                    </tr>
-
-                    <tr>
-                        <td>180 BPM</td>
-                        <td>161.6 BPM</td>
-                        <td>10.2%</td>
-                    </tr>
-
-                    <tr>
-                        <td>240 BPM</td>
-                        <td>173.3 BPM</td>
-                        <td>27.7%</td>
-                    </tr>
-                </tbody>
-
-            </table>
-
-            <p>
-                At higher input rates, accuracy decreased because the
-                200 samples-per-second acquisition rate limited the temporal
-                resolution of R-wave detection. Increasing the sampling rate
-                would be a straightforward way to improve performance at these
-                frequencies.
-            </p>
-
-
-            <h3>Closed-Loop Pacing</h3>
-
-            <p>
-                The most important test was whether the entire system could
-                operate as a pacemaker rather than simply as an ECG monitor.
-                During cardiac experiments, the system detected the frog's
-                intrinsic ventricular activity and delivered stimulation when
-                the lower rate interval was exceeded.
-            </p>
-
-            <p>
-                The resulting electrogram contained both natural and synthetic
-                heartbeats. After a paced contraction, the system could detect
-                the return of natural cardiac activity and inhibit the next
-                scheduled stimulus. This demonstrated the core behavior of a
-                VVI pacemaker: <strong>sense, wait, pace when necessary, and
-                inhibit pacing when intrinsic activity returns.</strong>
-            </p>
-
-            <figure class="project-figure">
-                <img
-                    src="../images/pacemaker-frog-electrogram.png"
-                    alt="Frog electrogram showing natural and pacemaker-induced cardiac activity"
-                >
-
-                <figcaption>
-                    Frog electrogram during closed-loop pacing. The trace shows
-                    both intrinsic and paced beats: purple indicates stimulation,
-                    yellow shows the ECG, and blue shows comparator detection.
-                    <em>Report Figure 6.</em>
-                </figcaption>
-            </figure>
-
-        </section>
-
-
-        <!-- =====================================================
-             TAKEAWAYS
-             ===================================================== -->
-
-        <section class="detail-section">
-
-            <h2>Takeaways</h2>
-
-            <p>
-                This project brought together several layers of biomedical
-                engineering in a single system. I designed analog electronics
-                for acquiring a physiological signal, implemented digital signal
-                processing and timing logic on a microcontroller, designed an
-                electrical stimulation stage, and built firmware for both
-                real-time control and persistent data logging.
-            </p>
-
-            <p>
-                More importantly, the final device behaved as a closed-loop
-                system rather than a collection of individual components. It
-                could observe cardiac activity, interpret that activity,
-                determine whether intervention was necessary, stimulate the
-                heart, and then respond to the resulting physiological signal.
-            </p>
-
-            <p>
-                Future improvements would include increasing the ECG sampling
-                rate, expanding the available memory for longer ECG recordings,
-                and adding a sensing blanking period during stimulation to
-                prevent pacing artifacts from interfering with heartbeat
-                detection.
-            </p>
-
-        </section>
+        <article class="technical-post">
+
+            <!-- =====================================================
+                 HEADER
+                 ===================================================== -->
+
+            <header class="project-header">
+
+                <h1 class="page-title">
+                    Building a VVI Pacemaker
+                </h1>
+
+                <p class="date">
+                    April 2024
+                </p>
+
+                <p class="project-tech">
+                    Arduino • C/C++ • ECG • Analog Circuits • Signal Processing • Embedded Systems
+                </p>
+
+                <p class="project-intro">
+                    I built a closed-loop VVI pacemaker that could acquire an ECG,
+                    detect ventricular activity, estimate heart rate, and electrically
+                    stimulate cardiac tissue when the intrinsic rhythm became too slow.
+                    The project combined analog signal conditioning, embedded firmware,
+                    real-time control, electrical stimulation, and persistent event storage.
+                </p>
+
+            </header>
+
+
+            <!-- =====================================================
+                 INTRODUCTION
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>The Goal</h2>
+
+                <p>
+                    A pacemaker should not simply generate electrical pulses at a fixed
+                    frequency. Ideally, it should first determine whether the heart is
+                    producing its own beats and intervene only when necessary.
+                </p>
+
+                <p>
+                    That is the basic idea behind a VVI pacemaker. The first
+                    <strong>V</strong> means that the ventricle is paced, the second
+                    <strong>V</strong> means that ventricular activity is sensed, and
+                    <strong>I</strong> means that pacing is inhibited when natural
+                    ventricular activity is detected.
+                </p>
+
+                <p>
+                    I designed the system around that feedback loop:
+                    <strong>sense the heart, determine whether a beat occurred,
+                    wait for the next beat, and stimulate only if it does not arrive
+                    soon enough.</strong>
+                </p>
+
+            </section>
+
+
+            <!-- =====================================================
+                 ARCHITECTURE
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>System Architecture</h2>
+
+                <p>
+                    I divided the pacemaker into three main subsystems:
+                    <strong>sensing, processing, and stimulation</strong>.
+                </p>
+
+                <p>
+                    The analog front end first acquired and conditioned the ECG.
+                    An Arduino then measured the timing between ventricular beats
+                    and implemented the pacing logic. Finally, a transistor-controlled
+                    stimulation circuit delivered an electrical pulse when the
+                    pacing condition was met.
+                </p>
+
+                <figure class="project-figure project-figure-narrow">
+
+                    <img
+                        src="../images/pacemaker-sensing-circuit.png"
+                        alt="Complete ECG sensing circuit for the VVI pacemaker"
+                    >
+
+                    <figcaption>
+                        <strong>Analog sensing chain.</strong>
+                        The ECG passes through differential amplification,
+                        filtering, additional amplification, and comparator-based
+                        R-wave detection.
+                    </figcaption>
+
+                </figure>
+
+            </section>
+
+
+            <!-- =====================================================
+                 SENSING
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>Turning a Raw ECG Into Something a Microcontroller Can Use</h2>
+
+                <p>
+                    The first challenge was signal quality. Cardiac electrical
+                    signals are small, and the waveform can easily be buried by
+                    baseline drift, environmental noise, and interference.
+                </p>
+
+                <p>
+                    I started with an <strong>AD623 instrumentation amplifier</strong>
+                    to perform differential acquisition from the cardiac electrodes.
+                    Differential sensing helped reject common-mode noise while
+                    providing an initial gain to the ECG.
+                </p>
+
+                <p>
+                    The signal then passed through an analog band-pass stage.
+                    A high-pass filter removed slow baseline changes and DC drift,
+                    while a low-pass filter attenuated higher-frequency noise.
+                    I placed a voltage follower between the stages to prevent the
+                    two RC filters from loading one another.
+                </p>
+
+                <p>
+                    After filtering, I amplified the signal again so that its
+                    amplitude was large enough for reliable analysis by the Arduino.
+                </p>
+
+                <p>
+                    Rather than asking the microcontroller to detect an R-wave
+                    entirely in software, I also used an analog comparator.
+                    The comparator generated a clean pulse whenever the amplified
+                    ECG crossed the selected R-wave threshold.
+                </p>
+
+                <p>
+                    This effectively converted a noisy physiological waveform into
+                    two useful signals: the digitized ECG itself and a clean event
+                    signal marking ventricular contractions.
+                </p>
+
+            </section>
+
+
+            <!-- =====================================================
+                 DIGITAL PROCESSING
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>Detecting Heartbeats in Firmware</h2>
+
+                <p>
+                    The conditioned ECG and comparator output were connected to an
+                    Arduino Nano. I sampled the signal at approximately
+                    <strong>200 samples per second</strong>, corresponding to one
+                    measurement every 5 milliseconds.
+                </p>
+
+                <p>
+                    Each comparator pulse indicated that an R-wave had occurred.
+                    The firmware recorded the time of each event and calculated the
+                    interval between consecutive R-waves.
+                </p>
+
+                <p>
+                    Heart rate could then be calculated from the R-R interval:
+                </p>
+
+                <p class="equation">
+                    HR = 60 / R-R Interval
+                </p>
+
+                <p>
+                    This gave the controller a continuously updated estimate of the
+                    intrinsic ventricular rate.
+                </p>
+
+                <figure class="project-figure project-figure-narrow">
+
+                    <img
+                        src="../images/pacemaker-arduino-ecg.png"
+                        alt="Digitized ECG and comparator output captured by the Arduino"
+                    >
+
+                    <figcaption>
+                        <strong>Digitized ECG and R-wave detection.</strong>
+                        The red trace shows the sampled ECG, while the orange pulses
+                        mark R-waves detected by the comparator.
+                    </figcaption>
+
+                </figure>
+
+            </section>
+
+
+            <!-- =====================================================
+                 CONTROL
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>The VVI Control Loop</h2>
+
+                <p>
+                    The pacing algorithm was built around a quantity called the
+                    <strong>lower rate interval</strong>, or LRI.
+                </p>
+
+                <p>
+                    The LRI defines the longest allowable time between ventricular
+                    beats. For example, a minimum rate of 60 BPM corresponds to an
+                    interval of one second.
+                </p>
+
+                <p>
+                    Every time a natural R-wave was detected, the timing interval
+                    reset. If another beat arrived before the LRI expired, the
+                    controller remained idle.
+                </p>
+
+                <p>
+                    If no ventricular beat arrived before the timer exceeded the
+                    LRI, the Arduino issued a pacing command.
+                </p>
+
+                <p>
+                    This produces the central behavior of a demand pacemaker:
+                    <strong>natural beats suppress pacing, while missing beats
+                    trigger pacing.</strong>
+                </p>
+
+                <figure class="project-figure">
+
+                    <img
+                        src="../images/pacemaker-pacing-control.png"
+                        alt="ECG comparator and pacing output demonstrating VVI pacing behavior"
+                    >
+
+                    <figcaption>
+                        <strong>VVI control behavior.</strong>
+                        With the target rate set above the intrinsic ECG rate,
+                        synthetic pacing pulses occur between natural beats.
+                        Natural beats inhibit unnecessary stimulation.
+                    </figcaption>
+
+                </figure>
+
+            </section>
+
+
+            <!-- =====================================================
+                 STIMULATION
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>Generating the Pacing Pulse</h2>
+
+                <p>
+                    The Arduino was responsible for deciding
+                    <em>when</em> to pace, but it was not used as the stimulation
+                    source itself.
+                </p>
+
+                <p>
+                    Instead, its digital output controlled an
+                    <strong>NPN transistor</strong> that acted as an electronic
+                    switch in a capacitor-based stimulation circuit.
+                </p>
+
+                <p>
+                    During charging, the capacitor stored energy from the supply.
+                    When the transistor switched states, that stored energy generated
+                    a sharp voltage pulse across the cardiac load.
+                </p>
+
+                <p>
+                    Before building the final pacing parameters, we experimentally
+                    characterized the cardiac tissue. The measured rheobase current
+                    was approximately <strong>250 µA</strong>, and the chronaxie was
+                    approximately <strong>20 ms</strong>.
+                </p>
+
+                <p>
+                    I therefore configured stimulation near twice both values:
+                    approximately <strong>0.5 mA for 40 ms</strong>.
+                    This was sufficient to initiate cardiac contraction during testing.
+                </p>
+
+                <figure class="project-figure">
+
+                    <img
+                        src="../images/pacemaker-stimulation-output.png"
+                        alt="Arduino pacing command and electrical stimulation pulse"
+                    >
+
+                    <figcaption>
+                        <strong>Stimulator response.</strong>
+                        The Arduino control signal triggers a sharp, repeatable
+                        electrical pulse across the load.
+                    </figcaption>
+
+                </figure>
+
+            </section>
+
+
+            <!-- =====================================================
+                 MEMORY
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>Adding Persistent Event Memory</h2>
+
+                <p>
+                    I also wanted the pacemaker to retain information about what
+                    happened even after power was removed.
+                </p>
+
+                <p>
+                    I implemented this using the Arduino's
+                    <strong>EEPROM</strong>. The firmware stored natural heartbeats,
+                    paced heartbeats, arrhythmia events, timestamps, and a short
+                    history of ECG measurements.
+                </p>
+
+                <p>
+                    Because EEPROM capacity was limited, I treated the ECG storage
+                    area as a circular buffer. New samples continuously replaced the
+                    oldest ones once the allocated region was full.
+                </p>
+
+                <p>
+                    Cardiac events were encoded separately by storing an event type
+                    followed by its timestamp. This made it possible to reconstruct
+                    the history of natural and synthetic beats after an experiment.
+                </p>
+
+                <p>
+                    One of the more interesting results was that we could recover
+                    the stored cardiac event data <strong>nine days after</strong>
+                    the original experiment.
+                </p>
+
+                <figure class="project-figure">
+
+                    <img
+                        src="../images/pacemaker-eeprom-events.png"
+                        alt="EEPROM output showing stored pacemaker events"
+                    >
+
+                    <figcaption>
+                        <strong>Persistent diagnostic memory.</strong>
+                        Synthetic heartbeat timestamps and event counts recovered
+                        from EEPROM after testing.
+                    </figcaption>
+
+                </figure>
+
+            </section>
+
+
+            <!-- =====================================================
+                 RESULTS
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>How Well Did It Work?</h2>
+
+                <p>
+                    I first characterized the analog front end. The theoretical
+                    gain of the complete sensing circuit was approximately
+                    <strong>-1160</strong>, while the experimentally measured gain
+                    was approximately <strong>-1130</strong>, a difference of about
+                    <strong>2.6%</strong>.
+                </p>
+
+                <p>
+                    I then tested the heart-rate measurement algorithm using
+                    synthetic ECG signals with known frequencies.
+                </p>
+
+
+                <div class="table-wrapper">
+
+                    <table class="project-table">
+
+                        <thead>
+                            <tr>
+                                <th>Expected HR</th>
+                                <th>Measured HR</th>
+                                <th>Error</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>60 BPM</td>
+                                <td>59.8 BPM</td>
+                                <td>0.31%</td>
+                            </tr>
+
+                            <tr>
+                                <td>120 BPM</td>
+                                <td>119.8 BPM</td>
+                                <td>0.18%</td>
+                            </tr>
+
+                            <tr>
+                                <td>150 BPM</td>
+                                <td>149.6 BPM</td>
+                                <td>0.24%</td>
+                            </tr>
+
+                            <tr>
+                                <td>180 BPM</td>
+                                <td>161.6 BPM</td>
+                                <td>10.2%</td>
+                            </tr>
+
+                            <tr>
+                                <td>240 BPM</td>
+                                <td>173.3 BPM</td>
+                                <td>27.7%</td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <p>
+                    Between 60 and 150 BPM, the calculated rate stayed within
+                    <strong>0.31%</strong> of the expected value.
+                </p>
+
+                <p>
+                    Accuracy fell at higher rates. The main limitation was temporal
+                    resolution: at 200 samples per second, the firmware only receives
+                    a new ECG measurement every 5 ms. At shorter R-R intervals,
+                    that quantization becomes a larger fraction of the heartbeat
+                    period.
+                </p>
+
+                <p>
+                    Increasing the sampling rate would therefore be one of the most
+                    direct improvements to the design.
+                </p>
+
+            </section>
+
+
+            <!-- =====================================================
+                 CLOSED LOOP
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>The Most Important Test: Closed-Loop Pacing</h2>
+
+                <p>
+                    Measuring an ECG and generating a pulse independently was useful,
+                    but the real objective was to make the complete feedback system
+                    work on cardiac tissue.
+                </p>
+
+                <p>
+                    During the final experiment, the pacemaker continuously monitored
+                    the frog electrogram. When intrinsic activity failed to occur
+                    before the lower rate interval expired, the stimulator fired.
+                </p>
+
+                <p>
+                    The resulting electrogram showed both natural and paced
+                    heartbeats. More importantly, after stimulation produced a
+                    contraction, the system could detect subsequent natural activity
+                    and inhibit the next pacing pulse.
+                </p>
+
+                <p>
+                    That behavior demonstrated the entire loop working together:
+                    sensing, heartbeat detection, timing, pacing, physiological
+                    response, and inhibition of unnecessary stimulation.
+                </p>
+
+                <figure class="project-figure project-figure-featured">
+
+                    <img
+                        src="../images/pacemaker-frog-electrogram.png"
+                        alt="Frog electrogram showing natural and pacemaker-induced heartbeats"
+                    >
+
+                    <figcaption>
+                        <strong>Closed-loop pacing on cardiac tissue.</strong>
+                        Yellow shows the ECG, blue shows comparator detection,
+                        and purple shows stimulation. The recording contains both
+                        naturally occurring and paced beats.
+                    </figcaption>
+
+                </figure>
+
+            </section>
+
+
+            <!-- =====================================================
+                 TAKEAWAYS
+                 ===================================================== -->
+
+            <section class="detail-section">
+
+                <h2>What I Learned</h2>
+
+                <p>
+                    What made this project interesting was that no single component
+                    was enough on its own.
+                </p>
+
+                <p>
+                    The analog circuit had to produce a clean enough ECG for the
+                    comparator. The comparator had to provide reliable timing events
+                    for the firmware. The firmware had to correctly implement the
+                    pacing interval. The stimulation circuitry then had to produce
+                    a physiologically meaningful output.
+                </p>
+
+                <p>
+                    The result was a true closed-loop embedded system:
+                    it sensed a biological process, extracted useful information
+                    from that signal, made a real-time control decision, actuated
+                    on the physical system, and then observed the resulting response.
+                </p>
+
+                <p>
+                    If I continued the project, the first improvements I would make
+                    would be increasing the ECG sampling rate, expanding nonvolatile
+                    storage, and introducing a short sensing blanking period during
+                    stimulation so that the pacing artifact could not interfere with
+                    R-wave detection.
+                </p>
+
+            </section>
+
+
+        </article>
 
     </main>
 
