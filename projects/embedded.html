@@ -67,18 +67,18 @@
             <h2>Building a Real-Time Physiological Monitor</h2>
 
             <p>
-                The goal of this project was to build an embedded physiological
-                monitoring system capable of measuring an ECG signal, estimating
-                heart rate, reading temperature, monitoring battery state, and
-                communicating the results over Bluetooth Low Energy.
+                This project is an embedded physiological monitoring system that
+                combines ECG acquisition, heart-rate estimation, temperature sensing,
+                battery monitoring, Bluetooth communication, and device-status feedback
+                on a single microcontroller.
             </p>
 
             <p>
                 Individually, none of these tasks is especially complicated. The
                 interesting problem appears when they all have to run on the same
-                microcontroller. ECG acquisition requires consistent timing, battery
-                measurements should happen periodically, Bluetooth events arrive
-                asynchronously, and user inputs can occur at any point in execution.
+                device. ECG acquisition requires consistent timing, battery measurements
+                should happen periodically, Bluetooth events arrive asynchronously,
+                and user inputs can occur at any point in execution.
             </p>
 
             <p>
@@ -91,12 +91,12 @@
 
 
         <!-- =========================================================
-             STATE MACHINE
+             FIRMWARE ARCHITECTURE
              ========================================================= -->
 
         <section class="detail-section">
 
-            <h2>Step 1: Defining How the Device Should Behave</h2>
+            <h2>Firmware Architecture</h2>
 
             <p>
                 Before implementing the individual sensors, I first needed a clear
@@ -149,65 +149,64 @@
 
             <p>
                 This structure became the backbone of the firmware. The remaining
-                embedded-system concepts were introduced as the implementation required
-                mechanisms for timing, concurrency, hardware input, and communication.
+                embedded-system mechanisms were introduced as the design required
+                timing, concurrency, hardware input, and communication.
             </p>
 
         </section>
 
 
         <!-- =========================================================
-             RTOS
+             ZEPHYR RTOS
              ========================================================= -->
 
         <section class="detail-section">
 
-            <h2>Step 2: Moving from a Main Loop to an RTOS</h2>
+            <h2>Why Zephyr RTOS?</h2>
 
             <p>
-                A simple embedded program can often run inside one infinite loop:
+                A simple embedded application can often run inside one infinite loop:
                 read an input, perform some work, update an output, and repeat.
                 That approach becomes harder to maintain once several operations have
                 different timing requirements or can occur asynchronously.
             </p>
 
             <p>
-                Our monitor had exactly that problem. A 30-second ECG measurement
-                should not prevent the system from managing timing or asynchronous
-                hardware events, and periodic battery monitoring should not require
-                blocking the processor until the next measurement is due.
+                This monitor had exactly that problem. ECG acquisition is
+                timing-sensitive, battery measurements happen periodically,
+                Bluetooth events occur asynchronously, and user inputs may arrive at
+                any time.
             </p>
 
             <p>
                 I used <strong>Zephyr RTOS</strong> to provide the scheduling and
-                synchronization infrastructure for the firmware.
+                synchronization infrastructure for the system.
             </p>
 
             <p>
                 A real-time operating system provides abstractions such as threads,
                 timers, events, and work queues on top of a small kernel. The kernel
                 manages when executable work runs and allows independent pieces of
-                firmware to coordinate without manually building an entire scheduler
-                inside the application.
+                firmware to coordinate without manually implementing an entire
+                scheduler inside the application.
             </p>
 
             <p>
-                The important distinction is that Zephyr did not replace the state
-                machine. The state machine defined <em>what the device should do</em>,
-                while the RTOS provided the mechanisms for deciding <em>when different
-                pieces of work could run</em>.
+                Zephyr did not replace the state machine. The state machine defined
+                <em>what the device should do</em>, while the RTOS provided the
+                mechanisms needed to control <em>when different pieces of work run</em>.
             </p>
 
         </section>
 
 
         <!-- =========================================================
-             THREAD
+             THREADS
              ========================================================= -->
 
         <section class="detail-section">
 
-            <h2>Step 3: Giving the Control Logic Its Own Thread</h2>
+            <h2>Threaded Control Flow</h2>
 
             <p>
                 Once the system became event driven, the main control logic needed a
@@ -217,24 +216,23 @@
 
             <p>
                 A <strong>thread</strong> is an independently schedulable sequence of
-                execution. On a single-core microcontroller, multiple threads are not
-                generally executing instructions at exactly the same instant. Instead,
+                execution. On a single-core microcontroller, several threads do not
+                normally execute instructions at exactly the same instant. Instead,
                 the RTOS kernel switches between runnable threads according to their
                 state and priority.
             </p>
 
             <p>
-                The system control logic can therefore wait for an event rather than
+                In this system, the control logic can wait for an event rather than
                 constantly consuming processor time. When there is nothing to do, the
-                thread blocks. When a measurement request, battery timer, or error event
-                arrives, the kernel wakes the appropriate execution path and the state
-                machine responds.
+                execution context blocks. When a measurement request, battery event,
+                or error condition arrives, the kernel can wake the relevant logic.
             </p>
 
             <p>
-                This was useful because the control flow did not need to manually poll
-                for every possible condition. The application could remain idle until
-                something meaningful actually happened.
+                This avoids a large polling loop in which the processor continuously
+                asks whether every subsystem has something to do. The firmware remains
+                inactive until meaningful work is available.
             </p>
 
         </section>
@@ -246,10 +244,10 @@
 
         <section class="detail-section">
 
-            <h2>Step 4: Turning Hardware Activity into Events</h2>
+            <h2>Events and Interrupts</h2>
 
             <p>
-                The next problem was asynchronous input. A user might request a
+                The next design problem was asynchronous input. A user might request a
                 measurement at any time, a timer might expire, or a peripheral
                 operation might fail.
             </p>
@@ -262,34 +260,34 @@
             <p>
                 A <strong>kernel event</strong> is a synchronization mechanism that
                 allows one part of the firmware to signal that something has happened.
-                Another execution context can wait for that event and continue only
-                when the corresponding event bit is posted.
+                Another execution context can wait until the corresponding event is
+                posted and then react to it.
             </p>
 
             <p>
                 In this project, events connect asynchronous activity to the state
-                machine. A measurement request can generate an event that moves the
-                system from IDLE to MEASURE, while a detected fault can generate an
-                error event that redirects execution into ERROR.
+                machine. A measurement request can cause the system to move from IDLE
+                to MEASURE, while a detected fault can generate an error event that
+                redirects execution into ERROR.
             </p>
 
             <p>
-                Hardware inputs also introduce the idea of an
+                Hardware input also introduces the concept of an
                 <strong>interrupt</strong>. An interrupt allows hardware to notify the
-                processor that something happened instead of forcing software to poll
-                the hardware repeatedly.
+                processor immediately when something happens rather than forcing
+                software to repeatedly poll the hardware.
             </p>
 
             <p>
-                The interrupt-side work is intentionally kept small. Rather than doing
-                an entire ECG measurement or state transition inside an interrupt
-                handler, the asynchronous input is converted into an event and the
-                larger operation is handled by normal RTOS-managed code.
+                Interrupt-side work is intentionally kept small. Rather than performing
+                an entire measurement or state transition inside an interrupt handler,
+                the asynchronous input can be converted into an event and the larger
+                operation handled by normal RTOS-managed code.
             </p>
 
             <p>
-                This separation keeps interrupt handling fast while keeping the actual
-                application behavior inside the state machine.
+                This keeps interrupt handling fast while preserving the main application
+                logic inside the state machine.
             </p>
 
         </section>
@@ -301,39 +299,37 @@
 
         <section class="detail-section">
 
-            <h2>Step 5: Scheduling Periodic Work with Timers</h2>
+            <h2>Timers and Periodic Work</h2>
 
             <p>
-                Some operations were not triggered by a user at all. Battery state, for
-                example, should be checked periodically while the device continues doing
-                other work.
+                Some operations are not triggered directly by the user. Battery state,
+                for example, should be checked periodically while the device continues
+                performing other work.
             </p>
 
             <p>
-                A naive implementation could call a delay function and wait for the
-                required interval. The problem is that a blocking delay prevents that
-                execution context from doing useful work during the wait.
+                A naive implementation could simply delay for the required interval.
+                The problem is that a blocking delay prevents that execution context
+                from doing anything useful while it waits.
             </p>
 
             <p>
-                An RTOS <strong>timer</strong> solves this by allowing the kernel to
-                track elapsed time independently. The application can schedule an
-                operation for the future and continue executing other work while the
-                timer runs.
+                An RTOS <strong>timer</strong> allows the kernel to track elapsed time
+                independently. The firmware can schedule an action for the future and
+                continue executing other work while the timer runs.
             </p>
 
             <p>
-                The battery-monitoring path uses this idea to trigger periodic
-                measurements while the system is otherwise idle. When the timer
-                expires, it signals that battery work is ready rather than requiring
-                the firmware to spend an entire minute counting time inside the main
-                control flow.
+                Battery monitoring uses this pattern. When the timer expires, the
+                firmware is notified that another battery measurement is due. The
+                system can then perform the measurement when appropriate instead of
+                spending the entire interval inside a delay loop.
             </p>
 
             <p>
-                Timers are also useful for periodic device behavior such as status LEDs,
-                where precise repeated timing is needed without filling the program with
-                blocking delay loops.
+                Timers are also useful for periodic status behavior, such as blinking
+                LEDs, because repeated timing can be handled independently of the main
+                application logic.
             </p>
 
         </section>
@@ -345,65 +341,70 @@
 
         <section class="detail-section">
 
-            <h2>Step 6: Acquiring an Analog ECG Signal</h2>
+            <h2>ECG Acquisition with the ADC</h2>
 
             <p>
-                With the control architecture in place, the next step was implementing
-                the primary measurement path: ECG acquisition.
+                With the control architecture in place, the primary measurement path
+                could be implemented: ECG acquisition.
             </p>
 
             <p>
-                An ECG is an analog voltage waveform, while the microcontroller operates
-                on digital values. The bridge between these two domains is the
+                An ECG is an analog voltage waveform, while the microcontroller
+                processes digital values. The bridge between these two domains is the
                 <strong>analog-to-digital converter</strong>, or ADC.
             </p>
 
             <p>
-                An ADC periodically samples an input voltage and converts it into a
-                numerical representation. For an ECG signal, a single sample is not
-                particularly useful; the shape and timing of many consecutive samples
-                contain the physiological information.
+                An ADC samples an input voltage and converts it into a numerical value
+                that software can process. For ECG measurement, a single sample is not
+                especially useful. The physiological information exists in the shape
+                and timing of many consecutive samples.
             </p>
 
             <p>
                 When the state machine enters MEASURE, the firmware acquires ECG
-                samples across an approximately 30-second measurement window. Maintaining
-                consistent sampling behavior is important because the heart-rate
-                calculation depends on the timing between repeated cardiac cycles.
+                samples across an approximately 30-second measurement window.
+                Consistent sampling is important because the heart-rate calculation
+                depends on the timing between repeated cardiac cycles.
             </p>
 
             <p>
-                The firmware then analyzes the sampled waveform and converts the
-                repeated beats into an average heart rate in beats per minute.
+                The sampled waveform is then processed on the microcontroller to
+                estimate average heart rate.
             </p>
 
         </section>
 
 
         <!-- =========================================================
-             HEART RATE
+             HEART RATE PROCESSING
              ========================================================= -->
 
         <section class="detail-section">
 
-            <h2>Step 7: Processing the ECG on the Microcontroller</h2>
+            <h2>Embedded Heart-Rate Processing</h2>
 
             <p>
-                The sampled ECG contains repeating cardiac cycles. By identifying the
-                timing of successive beats, the firmware can calculate how frequently
-                they occur and convert that interval into BPM.
+                The ECG waveform contains repeating cardiac cycles. By identifying
+                successive beats and measuring how frequently they occur, the firmware
+                can convert the sampled signal into beats per minute.
             </p>
 
             <p>
                 Performing this processing directly on the embedded target means the
-                external device does not need the raw ECG waveform simply to determine
-                heart rate. The microcontroller acquires the signal, extracts the
-                measurement, and exposes the resulting BPM.
+                external device does not need to receive and interpret the raw ECG
+                waveform simply to determine heart rate.
             </p>
 
             <p>
-                I validated the complete path using known reference heart rates and
-                compared them with the values produced by the embedded system and
+                Instead, the microcontroller performs the sensing and processing
+                locally and exposes the resulting BPM as a higher-level physiological
+                measurement.
+            </p>
+
+            <p>
+                I validated the complete measurement path by comparing known reference
+                heart rates with the values produced by the embedded system and
                 transmitted over Bluetooth.
             </p>
 
@@ -427,41 +428,38 @@
 
 
         <!-- =========================================================
-             I2C
+             I2C / TEMPERATURE
              ========================================================= -->
 
         <section class="detail-section">
 
-            <h2>Step 8: Adding a Digital Temperature Sensor</h2>
+            <h2>Temperature Sensing over I²C</h2>
 
             <p>
                 Temperature required a different type of sensor interface. Unlike the
-                ECG signal, the MCP9808 temperature sensor performs its own
-                analog-to-digital conversion internally.
+                ECG signal, the MCP9808 temperature sensor performs its own conversion
+                internally and provides a digital measurement.
             </p>
 
             <p>
                 The microcontroller therefore communicates with the sensor using
-                <strong>I²C</strong>, a synchronous serial bus commonly used for
-                low-speed embedded peripherals. I²C uses shared clock and data lines,
-                with device addresses allowing multiple peripherals to communicate over
-                the same bus.
+                <strong>I²C</strong>, a synchronous serial protocol commonly used for
+                embedded sensors and other low-speed peripherals.
+            </p>
+
+            <p>
+                I²C uses shared clock and data lines, while device addresses identify
+                the individual peripherals connected to the bus.
             </p>
 
             <p>
                 During the MEASURE state, the firmware communicates with the MCP9808
-                over I²C, retrieves the temperature measurement, and stores it alongside
-                the calculated heart rate.
+                over I²C, retrieves the temperature value, and stores it alongside the
+                calculated heart rate.
             </p>
 
             <p>
-                This gave the project two fundamentally different sensing paths:
-                continuous analog acquisition for ECG and register-based digital
-                communication for temperature.
-            </p>
-
-            <p>
-                Conceptually:
+                This gives the system two very different sensing paths:
             </p>
 
             <p>
@@ -471,7 +469,7 @@
             </p>
 
             <p>
-                while:
+                and:
             </p>
 
             <p>
@@ -489,7 +487,7 @@
 
         <section class="detail-section">
 
-            <h2>Step 9: Getting the Measurements Off the Device</h2>
+            <h2>Bluetooth Low Energy and GATT</h2>
 
             <p>
                 Once the monitor could calculate heart rate and measure temperature,
@@ -498,15 +496,15 @@
 
             <p>
                 I used <strong>Bluetooth Low Energy</strong>, or BLE, because it is
-                designed for low-power communication between embedded peripherals and
-                nearby devices such as phones and computers.
+                designed for low-power wireless communication between embedded
+                peripherals and nearby clients such as smartphones or computers.
             </p>
 
             <p>
                 BLE organizes application data through the
-                <strong>Generic Attribute Profile</strong>, or GATT. Instead of sending
-                an arbitrary stream of bytes, data is organized into services and
-                characteristics with defined meanings.
+                <strong>Generic Attribute Profile</strong>, or GATT. Rather than
+                transmitting an arbitrary stream of bytes, GATT organizes information
+                into services and characteristics with defined meanings.
             </p>
 
             <p>
@@ -518,19 +516,18 @@
 
             <p>
                 Temperature and firmware error information are exposed using custom
-                characteristics because they do not fit the same standard service
-                structure used elsewhere in the device.
+                characteristics because they do not map as directly onto the standard
+                services used elsewhere in the system.
             </p>
 
             <p>
-                BLE notifications are sent after new measurements have been processed.
-                Notifications are useful because the peripheral can push a new value to
-                a connected client instead of requiring the client to repeatedly poll
-                for changes.
+                BLE notifications allow the firmware to push updated values to a
+                connected client after a measurement completes rather than requiring
+                the client to continuously poll the device.
             </p>
 
             <p>
-                At this point, the complete physiological pipeline became:
+                The physiological data path can therefore be viewed as:
             </p>
 
             <p>
@@ -549,31 +546,32 @@
 
         <section class="detail-section">
 
-            <h2>Step 10: Adding Background Battery Monitoring</h2>
+            <h2>Background Battery Monitoring</h2>
 
             <p>
-                Physiological measurement was not the only information the device
-                needed to manage. The firmware also periodically monitors an analog
-                battery signal through another ADC input.
+                Physiological measurement is not the only information the device needs
+                to manage. The firmware also periodically monitors an analog battery
+                signal through another ADC input.
             </p>
 
             <p>
-                This path demonstrates why the earlier timer and state-machine
-                architecture are useful. Battery measurement does not need to run
-                continuously, and it should not interfere with an active ECG
-                measurement.
+                This part of the system demonstrates why the earlier timer and
+                state-machine architecture are useful. Battery measurement does not
+                need to run continuously, and it should not interfere with an active
+                ECG measurement.
             </p>
 
             <p>
-                Instead, the RTOS timer indicates when a battery measurement is due.
-                If the system is available, the state machine enters BATTERY, acquires
-                the ADC measurement, processes the result, and then returns to IDLE.
+                Instead, the RTOS timer indicates when another battery measurement is
+                due. When the system is available, the state machine can enter BATTERY,
+                acquire the ADC measurement, process the result, and then return to
+                IDLE.
             </p>
 
             <p>
-                The resulting battery value is then used in three independent output
-                paths: internal firmware reporting, Bluetooth's Battery Service, and a
-                local LED indicator.
+                The resulting battery value is used in three separate output paths:
+                internal firmware reporting, Bluetooth's Battery Service, and a local
+                LED indicator.
             </p>
 
 
@@ -602,30 +600,29 @@
 
         <section class="detail-section">
 
-            <h2>Step 11: Converting Software State into Physical Feedback</h2>
+            <h2>PWM and Physical Feedback</h2>
 
             <p>
-                Not every output needed to go through Bluetooth. LEDs provide an
-                immediate way to communicate device state without requiring a connected
-                client.
+                Not every output needs to be transmitted over Bluetooth. LEDs provide
+                immediate local feedback without requiring a connected client.
             </p>
 
             <p>
-                Battery level presented an interesting problem because it is a
-                continuous value rather than a simple on/off condition. To represent
+                Battery level creates an interesting output problem because it is a
+                continuous value rather than a simple binary condition. To represent
                 that value physically, the firmware uses
                 <strong>pulse-width modulation</strong>, or PWM.
             </p>
 
             <p>
                 PWM rapidly switches a digital output between high and low states.
-                Changing the percentage of each cycle spent in the high state—the duty
-                cycle—changes the average power delivered to the LED and therefore its
-                apparent brightness.
+                Changing the fraction of each cycle spent high—the duty cycle—changes
+                the average power delivered to the LED and therefore its apparent
+                brightness.
             </p>
 
             <p>
-                The battery measurement is mapped to PWM duty cycle so LED brightness
+                The battery measurement is mapped to PWM duty cycle so the LED brightness
                 changes with battery level. This creates a direct path from an ADC
                 measurement through firmware processing to a physical hardware output.
             </p>
@@ -645,31 +642,30 @@
 
         <section class="detail-section">
 
-            <h2>Step 12: Designing the System for Failure</h2>
+            <h2>Error Handling</h2>
 
             <p>
-                Once multiple peripherals were involved, assuming every hardware
-                operation would succeed was no longer reasonable. ADC configuration,
+                Once multiple peripherals are involved, assuming every hardware
+                operation will succeed is no longer reasonable. ADC configuration,
                 sensor communication, Bluetooth operations, and initialization can all
                 fail.
             </p>
 
             <p>
-                This is why ERROR was designed as a first-class state rather than as a
-                collection of scattered error messages.
+                This is why ERROR is treated as a first-class system state rather than
+                as a collection of scattered error messages.
             </p>
 
             <p>
-                When a subsystem detects a serious failure, it posts an error event.
-                The state machine can then transition into ERROR from a known point in
-                the control flow.
+                When a subsystem detects a serious failure, it can post an error event.
+                The state machine then transitions into ERROR from a known point in the
+                control flow.
             </p>
 
             <p>
-                Normal device behavior is stopped, the error condition is recorded, and
-                the system provides a clear fault indication. Error information can
-                also be exposed to a BLE client through the custom error
-                characteristic.
+                Normal device behavior can be stopped, the error condition recorded,
+                and a clear fault indication provided. Error information can also be
+                exposed to a BLE client through the custom error characteristic.
             </p>
 
             <p>
@@ -679,9 +675,8 @@
             </p>
 
             <p>
-                This is another place where the state-machine architecture helped:
-                failure behavior became deterministic and visible rather than being
-                hidden inside individual peripheral functions.
+                Making failure handling part of the state machine keeps the system
+                deterministic even when the hardware does not behave as expected.
             </p>
 
         </section>
@@ -693,12 +688,12 @@
 
         <section class="detail-section">
 
-            <h2>Step 13: Validating Complete Data Paths</h2>
+            <h2>End-to-End Validation</h2>
 
             <p>
-                Testing individual functions is useful, but an embedded system can fail
-                at the boundaries between those functions. For that reason, I focused
-                on validating complete signal paths through the device.
+                Testing individual functions is useful, but an embedded system can also
+                fail at the boundaries between those functions. For that reason, I
+                focused on validating complete signal paths through the device.
             </p>
 
             <p>
@@ -714,8 +709,8 @@
             </p>
 
             <p>
-                The goal was therefore not simply to verify that the ADC worked or that
-                Bluetooth worked independently. It was to verify chains such as:
+                The goal was not simply to verify that the ADC worked or that Bluetooth
+                worked independently. It was to verify complete chains such as:
             </p>
 
             <p>
@@ -726,8 +721,8 @@
             </p>
 
             <p>
-                That end-to-end testing was especially valuable because it exposed the
-                interactions between the different layers of the embedded system.
+                This type of testing is particularly valuable because it exposes errors
+                at the boundaries between sensing, software, and communication.
             </p>
 
         </section>
@@ -739,7 +734,7 @@
 
         <section class="detail-section">
 
-            <h2>Putting the System Together</h2>
+            <h2>Putting It All Together</h2>
 
             <p>
                 What began as several separate sensing and communication requirements
@@ -747,20 +742,19 @@
             </p>
 
             <p>
-                The state machine gave the application predictable high-level behavior.
-                Zephyr's kernel provided the underlying scheduling and synchronization
-                mechanisms. A thread allowed control logic to wait for work rather than
-                continuously polling, kernel events connected asynchronous activity to
-                the state machine, and timers scheduled periodic operations without
-                blocking execution.
+                The state machine gives the application predictable high-level
+                behavior. Zephyr's kernel provides the scheduling and synchronization
+                mechanisms underneath it. Threads allow control logic to wait for work,
+                kernel events connect asynchronous activity to the state machine, and
+                timers schedule periodic operations without blocking execution.
             </p>
 
             <p>
-                At the hardware boundary, ADCs converted analog ECG and battery signals
-                into digital measurements, I²C connected the digital temperature
-                sensor, and PWM translated processed values back into physical output.
-                BLE then provided a structured wireless interface between the embedded
-                system and an external client.
+                At the hardware boundary, ADCs convert analog ECG and battery signals
+                into digital measurements, I²C connects the digital temperature sensor,
+                and PWM translates processed values back into physical output. BLE then
+                provides a structured wireless interface between the embedded system
+                and an external client.
             </p>
 
             <p>
@@ -781,7 +775,7 @@
             <p>
                 The most valuable part of the project was learning how these embedded
                 concepts fit together. Threads, timers, interrupts, events, ADCs, I²C,
-                PWM, and Bluetooth are not isolated features; each solves a particular
+                PWM, and Bluetooth are not isolated features; each solves a specific
                 problem that appears while building a responsive real-time system.
             </p>
 
