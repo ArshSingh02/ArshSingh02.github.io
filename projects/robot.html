@@ -40,99 +40,1054 @@
         </h1>
 
         <p class="date">
-            July 2026
+            June 2026 – August 2026
         </p>
 
         <p class="project-tech">
-            C++ • ROS 2 • Isaac ROS • Reinforcement Learning •
-            NVIDIA Jetson • cuVSLAM • YOLO • Nav2
+            C++ • Python • ROS 2 • Isaac ROS • Reinforcement Learning •
+            NVIDIA Jetson • cuVSLAM • NVBlox • YOLOv8 • TensorRT • Nav2
         </p>
 
 
+        <!-- =========================================================
+             OVERVIEW
+             ========================================================= -->
+
         <section class="detail-section">
 
-            <h2>Overview</h2>
+            <h2>Building a Robot That Decides Where to Search</h2>
 
             <p>
-                Developed a C++ autonomous mobile robot using Isaac ROS to
-                execute reinforcement learning policies for autonomous object
-                search in indoor environments.
+                This project began with a simple question: if a mobile robot is
+                looking for an object somewhere inside an apartment, how should
+                it decide where to search next?
             </p>
 
             <p>
-                The project combines perception, visual SLAM, mapping,
-                navigation, object detection, Bayesian reasoning, and
-                reinforcement learning into an end-to-end robotic system
-                deployed on NVIDIA Jetson hardware.
+                Getting a robot to drive to a known destination is already a
+                substantial robotics problem. The robot must estimate its
+                position, understand the geometry of the environment, plan a
+                collision-free path, execute that path, and interpret camera
+                observations along the way. Object search adds another layer:
+                the destination is not known in advance.
+            </p>
+
+            <p>
+                I built an autonomous mobile robot around an NVIDIA Jetson Orin
+                Nano and an Intel RealSense D435I. The final system combined
+                visual SLAM, 3D mapping, Nav2 navigation, YOLO-based object
+                detection, Bayesian belief updates, and a reinforcement
+                learning policy that selected which region of the apartment
+                the robot should inspect next.
+            </p>
+
+            <p>
+                Rather than replacing the entire robotics stack with a learned
+                policy, I used reinforcement learning only for the part of the
+                problem where learning was useful: high-level search strategy.
+                Classical robotics components remained responsible for
+                localization, mapping, path planning, obstacle avoidance, and
+                low-level motion.
+            </p>
+
+
+            <!-- FIGURE PLACEHOLDER
+                 Suggested figure:
+                 Photograph of the completed robot showing the Jetson,
+                 RealSense camera, chassis, and motor controller.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Figure Placeholder — Completed Search Robot
+                </div>
+
+                <figcaption>
+                    The physical robot platform built around an NVIDIA Jetson
+                    Orin Nano and Intel RealSense D435I depth camera.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             HARDWARE / ROS 2 BRINGUP
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Connecting the Physical Robot to ROS 2</h2>
+
+            <p>
+                Before the robot could search autonomously, the hardware first
+                needed to behave like a normal ROS 2 mobile base.
+            </p>
+
+            <p>
+                The Jetson Orin Nano acted as the onboard computer and ran
+                Ubuntu 22.04 with ROS 2 Humble. An Intel RealSense D435I
+                provided stereo infrared images, RGB images, depth
+                measurements, and inertial data. A separate motor controller
+                drove the mobile base over a serial connection.
+            </p>
+
+            <p>
+                ROS 2 components communicate by publishing and subscribing to
+                named <strong>topics</strong>. This makes the individual
+                subsystems largely independent. A navigation algorithm does
+                not need to know which motor controller is installed on the
+                robot; it only needs to publish the appropriate velocity
+                command.
+            </p>
+
+            <p>
+                Nav2 outputs velocity commands using the standard ROS 2
+                <code>/cmd_vel</code> interface. I created a bridge between
+                these velocity commands and the serial protocol understood by
+                the motor controller. The bridge converted desired linear and
+                angular velocities into physical drive commands transmitted
+                through <code>/dev/ttyACM0</code>.
+            </p>
+
+            <p>
+                This abstraction became important later in the project. The
+                navigation stack, search policy, and perception system could
+                all operate using standard ROS interfaces without being
+                tightly coupled to the particular chassis underneath them.
             </p>
 
         </section>
 
 
+        <!-- =========================================================
+             TF
+             ========================================================= -->
+
         <section class="detail-section">
 
-            <h2>Autonomy Stack</h2>
+            <h2>Defining Where Everything Is: The ROS Transform Tree</h2>
 
             <p>
-                The robot uses ROS 2 and Isaac ROS as the foundation of its
-                autonomy stack. Visual localization and mapping are performed
-                using cuVSLAM, while Nav2 handles autonomous navigation through
-                the mapped environment.
+                Once the base could move, the next problem was establishing a
+                consistent spatial coordinate system.
             </p>
 
             <p>
-                YOLO-based object detection processes camera observations to
-                identify relevant objects while the robot searches the
-                environment.
+                A robot rarely operates in only one coordinate frame. The
+                camera measures objects relative to itself, the robot moves
+                relative to its base, odometry describes local motion, and a
+                map describes positions in the global environment.
+            </p>
+
+            <p>
+                ROS 2 handles these relationships using the
+                <strong>TF transform system</strong>. Every sensor and
+                coordinate frame forms part of a transform tree that allows a
+                point measured in one frame to be expressed in another.
+            </p>
+
+            <p>
+                The final transform structure used by the robot was:
+            </p>
+
+            <pre><code>map
+└── odom
+    └── base_link
+        └── camera0_link</code></pre>
+
+            <p>
+                Here, <code>map</code> represents the global apartment map,
+                <code>odom</code> tracks locally continuous robot motion,
+                <code>base_link</code> represents the robot chassis, and
+                <code>camera0_link</code> represents the mounted RealSense
+                camera.
+            </p>
+
+            <p>
+                The camera transform was defined from the measured physical
+                mounting position on the robot. Establishing this transform
+                correctly was essential because errors in the camera pose
+                propagate directly into visual localization, 3D mapping, and
+                obstacle geometry.
+            </p>
+
+
+            <!-- FIGURE PLACEHOLDER
+                 Suggested figure:
+                 TF tree diagram or RViz screenshot displaying
+                 map -> odom -> base_link -> camera0_link.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Figure Placeholder — ROS 2 TF Tree
+                </div>
+
+                <figcaption>
+                    Coordinate frames connecting the global map, local odometry,
+                    robot chassis, and RealSense camera.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             VISUAL SLAM
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Localizing the Robot with Visual SLAM</h2>
+
+            <p>
+                Autonomous navigation requires the robot to continuously answer
+                two questions: <em>where am I?</em> and <em>what does the
+                environment around me look like?</em>
+            </p>
+
+            <p>
+                I used NVIDIA Isaac ROS Visual SLAM with
+                <strong>cuVSLAM</strong> to estimate the motion of the robot
+                from the RealSense stereo cameras. The left and right infrared
+                image streams provided synchronized stereo observations that
+                could be used to track visual features and estimate camera
+                motion over time.
+            </p>
+
+            <p>
+                Visual SLAM differs from simple wheel odometry because it
+                estimates motion by observing how features in the environment
+                move between camera frames. This was particularly useful for
+                the platform because it provided localization without requiring
+                a dedicated 2D LiDAR.
+            </p>
+
+            <p>
+                cuVSLAM published the transformations needed to connect
+                <code>map</code>, <code>odom</code>, and
+                <code>base_link</code>. Once this portion of the stack was
+                stable, the robot could be driven around the apartment while
+                maintaining a continuously updated estimate of its position.
             </p>
 
         </section>
 
 
+        <!-- =========================================================
+             NVBLOX
+             ========================================================= -->
+
         <section class="detail-section">
 
-            <h2>Reinforcement Learning</h2>
+            <h2>Turning Camera Data into a 3D Map</h2>
 
             <p>
-                Designed a custom Gymnasium environment for training an
-                autonomous search policy using Maskable PPO.
+                Localization alone tells the robot where it is, but navigation
+                also requires a model of the surrounding geometry.
             </p>
 
             <p>
-                The environment incorporates Bayesian belief updates and
-                action masking so that the policy can use observations from
-                previous search locations to determine where the robot should
-                search next.
+                I integrated <strong>NVBlox</strong>, NVIDIA's GPU-accelerated
+                mapping system, with the RealSense depth stream and cuVSLAM
+                poses. NVBlox incrementally fused depth measurements as the
+                robot moved through the apartment, producing a volumetric
+                representation of the environment.
+            </p>
+
+            <p>
+                Instead of treating every camera frame independently, volumetric
+                mapping integrates many observations into a shared world model.
+                Surfaces observed repeatedly from different viewpoints become
+                part of the same reconstructed geometry.
+            </p>
+
+            <p>
+                The mapping pipeline produced both a 3D mesh and an ESDF
+                representation. An <strong>Euclidean Signed Distance
+                Field</strong>, or ESDF, stores the distance from locations in
+                space to the nearest obstacle. This representation is
+                especially useful for collision-aware planning because it
+                provides more information than a binary occupied/free map.
+            </p>
+
+            <p>
+                For this robot, NVBlox used 10 cm voxels and integrated depth
+                measurements out to approximately 5 meters. The reconstructed
+                apartment could then be exported as a 3D mesh and converted
+                into the 2D representation needed by Nav2.
+            </p>
+
+
+            <!-- FIGURE PLACEHOLDER
+                 Suggested figure:
+                 RViz screenshot showing the robot, cuVSLAM trajectory,
+                 NVBlox mesh, and reconstructed apartment.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Figure Placeholder — NVBlox Apartment Reconstruction
+                </div>
+
+                <figcaption>
+                    GPU-accelerated 3D reconstruction of the apartment using
+                    RealSense depth measurements, cuVSLAM poses, and NVBlox.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             2D MAP
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>From a 3D Reconstruction to a Navigation Map</h2>
+
+            <p>
+                The perception stack produced a rich 3D representation, but
+                the mobile robot itself primarily moved across a 2D floor
+                plane. For navigation, I therefore extracted a horizontal
+                collision representation from the reconstructed environment.
+            </p>
+
+            <p>
+                The resulting occupancy map represented the apartment as a
+                grid in which each cell described navigable space, an obstacle,
+                or an unknown region. The final map used a resolution of
+                approximately 7.5 cm per cell.
+            </p>
+
+            <p>
+                This map became the shared spatial reference for the remainder
+                of the project. Navigation goals, search locations, object
+                observations, and the robot's position could now all be
+                expressed in the same global coordinate system.
+            </p>
+
+
+            <!-- FIGURE PLACEHOLDER
+                 Suggested figure:
+                 The apartment_2d_map occupancy grid with important rooms
+                 labeled.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Figure Placeholder — 2D Apartment Occupancy Map
+                </div>
+
+                <figcaption>
+                    Two-dimensional occupancy map generated from the mapped
+                    apartment and used for autonomous navigation.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             NAV2
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Autonomous Navigation with Nav2</h2>
+
+            <p>
+                Once the robot had a map and a reliable localization estimate,
+                I integrated <strong>Nav2</strong> to move between arbitrary
+                positions in the apartment.
+            </p>
+
+            <p>
+                Nav2 separates navigation into several related problems. A
+                global planner finds a route through the known map, a local
+                controller continuously produces motion commands, and local
+                costmaps represent nearby obstacles that must be avoided while
+                the robot follows the route.
+            </p>
+
+            <p>
+                The global planner operated in the
+                <code>map</code> coordinate frame while the rolling local
+                costmap operated in <code>odom</code>. The local map covered a
+                region surrounding the robot and continuously moved with it.
+                Inflation around detected obstacles prevented the planner from
+                selecting paths that passed too close to walls or furniture.
+            </p>
+
+            <p>
+                After tuning the robot footprint, velocity limits, inflation
+                parameters, and controller behavior, the system successfully
+                executed complete <code>NavigateToPose</code> actions in the
+                mapped apartment.
+            </p>
+
+            <p>
+                At this point, the robot could autonomously travel to a known
+                destination. That changed the original object-search problem
+                significantly: instead of asking a learning algorithm to
+                control the motors directly, I could ask it a much simpler
+                high-level question:
+            </p>
+
+            <p>
+                <strong>Which destination should Nav2 visit next?</strong>
+            </p>
+
+
+            <!-- VIDEO PLACEHOLDER
+                 Suggested video:
+                 Robot autonomously navigating between two locations with
+                 RViz/Nav2 visible next to physical robot footage.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Video Placeholder — Autonomous Nav2 Navigation
+                </div>
+
+                <figcaption>
+                    Autonomous navigation through the apartment using the
+                    saved map, cuVSLAM localization, and Nav2.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             YOLO
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Giving the Robot Semantic Perception</h2>
+
+            <p>
+                Geometry tells the robot where walls and obstacles are, but it
+                does not tell the robot what it is looking at. Search requires
+                semantic information.
+            </p>
+
+            <p>
+                I added a YOLOv8 perception pipeline using the RealSense RGB
+                stream. Camera frames were passed through a TensorRT-optimized
+                detector running on the Jetson, producing object classes,
+                confidence scores, and bounding boxes.
+            </p>
+
+            <p>
+                The perception stack published detections through ROS 2 so that
+                the search controller did not need to know anything about the
+                underlying neural network implementation. After filtering and
+                confirmation, observations relevant to the search problem were
+                exposed through:
+            </p>
+
+            <pre><code>/confirmed_search_detections</code></pre>
+
+            <p>
+                This interface separated visual perception from decision
+                making. YOLO answered the question
+                <em>what objects can I currently see?</em>, while the search
+                policy answered <em>where should I go next?</em>
+            </p>
+
+
+            <!-- FIGURE PLACEHOLDER
+                 Suggested figure:
+                 RealSense RGB image with YOLO bounding boxes and class labels.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Figure Placeholder — YOLO Object Detection
+                </div>
+
+                <figcaption>
+                    YOLOv8 detections from the RealSense RGB camera used to
+                    provide semantic observations to the search system.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             SEARCH FORMULATION
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Representing the Apartment as Search Locations</h2>
+
+            <p>
+                With reliable navigation and perception working independently,
+                the remaining problem was deciding how the robot should search.
+            </p>
+
+            <p>
+                Allowing the policy to choose arbitrary coordinates would have
+                created a very large and unnecessarily difficult action space.
+                Instead, I represented the apartment using a set of
+                strategically selected <strong>vantage points</strong>.
+            </p>
+
+            <p>
+                Each vantage point corresponded to a position from which the
+                camera could inspect an important region of the apartment:
+                areas around the desk, beds, entrance, living room, kitchen,
+                and other locations where the target might plausibly appear.
+            </p>
+
+            <p>
+                The search policy selected between ten possible locations:
+            </p>
+
+            <pre><code>desk_entry
+desk_middle
+desk_deep
+left_bed_entry
+left_bed_deep
+entrance
+living_room
+front_bed
+kitchen
+right_bed</code></pre>
+
+            <p>
+                After a location was chosen, Nav2 handled the details of
+                reaching it. This created a useful hierarchy:
+            </p>
+
+            <pre><code>Reinforcement Learning
+        ↓
+Choose next search location
+        ↓
+Nav2
+        ↓
+Plan and execute collision-free path
+        ↓
+YOLO
+        ↓
+Observe objects at destination</code></pre>
+
+            <p>
+                The learned policy therefore operated at the level of
+                <strong>decision making</strong>, not low-level control.
+            </p>
+
+
+            <!-- FIGURE PLACEHOLDER
+                 Suggested figure:
+                 Apartment map with the ten vantage points numbered or labeled.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Figure Placeholder — Search Vantage Points
+                </div>
+
+                <figcaption>
+                    Discrete observation locations distributed throughout the
+                    apartment. The reinforcement learning policy selected
+                    which vantage point to visit next.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             BAYESIAN REASONING
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Using Objects as Clues</h2>
+
+            <p>
+                A purely geometric search strategy might simply visit the
+                nearest unexplored location. However, indoor environments
+                contain semantic structure. Objects often provide information
+                about where other objects are likely to be located.
+            </p>
+
+            <p>
+                For example, observing a keyboard provides evidence that the
+                robot is near a desk. A backpack, bowl, or other contextual
+                object can similarly provide clues about which region of the
+                apartment the robot is currently observing and how likely the
+                target is to appear nearby.
+            </p>
+
+            <p>
+                I represented this information using Bayesian belief updates.
+                As the robot collected observations, the probability assigned
+                to different search regions could change instead of remaining
+                fixed throughout the episode.
+            </p>
+
+            <p>
+                Six clue observations were incorporated into the search
+                environment:
+            </p>
+
+            <pre><code>backpack_desk
+backpack_entrance
+backpack_front_bed
+bowl_front_bed
+hair_drier_left_bed
+keyboard_desk</code></pre>
+
+            <p>
+                Combining these observations with reinforcement learning
+                allowed the policy to make decisions based on both
+                <strong>travel cost</strong> and
+                <strong>information gathered so far</strong>.
             </p>
 
         </section>
 
 
+        <!-- =========================================================
+             RL ENVIRONMENT
+             ========================================================= -->
+
         <section class="detail-section">
 
-            <h2>Evaluation</h2>
+            <h2>Building the Search Problem as a Gymnasium Environment</h2>
 
             <p>
-                The learned policy was evaluated against a greedy search
-                baseline across 10,000 randomized evaluation episodes.
+                I implemented the high-level decision problem as a custom
+                Gymnasium environment so that search strategies could be
+                trained and evaluated independently from the physical robot.
             </p>
 
             <p>
-                The reinforcement learning policy reduced average search time
-                by 13% compared with the greedy baseline.
+                The action space was discrete: each action selected one of the
+                ten search vantage points.
+            </p>
+
+            <p>
+                The observation included the robot's current search location,
+                which locations had already been visited, confidence values
+                associated with semantic clues, and the amount of search time
+                remaining. The final state representation contained 38 values.
+            </p>
+
+            <p>
+                Each episode was also constrained by a time budget. I evaluated
+                search behavior under budgets of 30, 60, 120, and 300 seconds.
+                Moving between vantage points incurred time based on travel
+                distance together with an observation overhead.
+            </p>
+
+            <p>
+                The episode terminated when the target was found or when the
+                available search time expired.
             </p>
 
         </section>
 
 
+        <!-- =========================================================
+             ACTION MASKING
+             ========================================================= -->
+
         <section class="detail-section">
 
-            <h2>Deployment</h2>
+            <h2>Preventing Impossible Decisions with Action Masking</h2>
 
             <p>
-                Deployed the complete autonomy stack on an NVIDIA Jetson,
-                integrating localization, mapping, navigation, perception,
-                and learned search policies on the physical robot.
+                Standard reinforcement learning policies assign probabilities
+                to every action in the action space. But in this environment,
+                some actions should not be available at a particular moment.
+            </p>
+
+            <p>
+                For example, repeatedly selecting a vantage point that had
+                already been searched generally provides little useful
+                information. An action may also be infeasible if the remaining
+                time budget is too small to reach that location.
+            </p>
+
+            <p>
+                I therefore used <strong>action masking</strong> to explicitly
+                mark unavailable actions before the policy selected its next
+                destination.
+            </p>
+
+            <p>
+                This reduces wasted exploration during training and makes the
+                policy's action space better reflect the actual state of the
+                search problem.
+            </p>
+
+        </section>
+
+
+        <!-- =========================================================
+             PPO
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Training the Search Policy with Maskable PPO</h2>
+
+            <p>
+                The search policy was trained using
+                <strong>Maskable Proximal Policy Optimization</strong>
+                (Maskable PPO).
+            </p>
+
+            <p>
+                PPO is a policy-gradient reinforcement learning algorithm. The
+                policy receives the current search state and produces a
+                probability distribution over possible destinations. During
+                training, that distribution is gradually adjusted toward
+                decisions that produce greater expected reward.
+            </p>
+
+            <p>
+                The reward function strongly rewarded successful target
+                discovery while penalizing timeout and invalid behavior. The
+                objective was not simply to maximize the probability of
+                eventually finding the object; the policy needed to find it
+                while using the available search time efficiently.
+            </p>
+
+            <p>
+                I trained the Maskable PPO policy for approximately one million
+                environment steps before evaluating it against several
+                non-learning baselines.
+            </p>
+
+        </section>
+
+
+        <!-- =========================================================
+             BASELINES
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>What Should Reinforcement Learning Beat?</h2>
+
+            <p>
+                Reinforcement learning is only useful if it improves on simpler
+                decision rules. I therefore implemented multiple baseline
+                strategies rather than evaluating the learned policy in
+                isolation.
+            </p>
+
+            <p>
+                The baselines included a nearest-unexplored strategy, a
+                probability-greedy strategy, and a posterior-greedy strategy.
+                These methods captured reasonable alternatives such as always
+                choosing the closest unvisited location or always selecting
+                the location currently believed most likely to contain the
+                target.
+            </p>
+
+            <p>
+                The difference is that the learned policy could optimize
+                decisions over the entire remaining search horizon rather than
+                optimizing only the immediate next move.
+            </p>
+
+        </section>
+
+
+        <!-- =========================================================
+             PHYSICAL DEPLOYMENT
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Connecting the Learned Policy Back to the Robot</h2>
+
+            <p>
+                Training the search policy in a Gymnasium environment was only
+                useful if its decisions could be executed by the real robot.
+            </p>
+
+            <p>
+                I built a search controller that connected the abstract RL
+                environment to ROS 2. Each high-level action was translated
+                into a physical pose in the apartment and sent to Nav2 as a
+                navigation goal.
+            </p>
+
+            <p>
+                Once the robot reached the requested vantage point, the
+                controller collected confirmed YOLO observations, updated the
+                search state, and requested another action from the policy.
+            </p>
+
+            <p>
+                Conceptually, the deployed loop became:
+            </p>
+
+            <pre><code>Policy selects vantage point
+        ↓
+Send NavigateToPose goal
+        ↓
+Nav2 drives robot to destination
+        ↓
+Camera observes environment
+        ↓
+YOLO detects semantic clues / target
+        ↓
+Update Bayesian belief
+        ↓
+Policy selects next vantage point</code></pre>
+
+            <p>
+                This continued until the target was detected or the search
+                budget expired.
+            </p>
+
+
+            <!-- VIDEO PLACEHOLDER
+                 Suggested video:
+                 Full search run:
+                 robot drives to multiple vantage points,
+                 YOLO detects clues,
+                 target is eventually found.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Video Placeholder — End-to-End Autonomous Search
+                </div>
+
+                <figcaption>
+                    End-to-end deployment of the learned search policy,
+                    navigation stack, and object detection pipeline on the
+                    physical robot.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             EVALUATION
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Evaluating Search Efficiency</h2>
+
+            <p>
+                I evaluated the learned policy across 10,000 randomized search
+                episodes and compared its performance with the greedy
+                baselines.
+            </p>
+
+            <p>
+                Randomization changed the conditions of the search rather than
+                measuring performance on a single fixed scenario. This allowed
+                the evaluation to test whether the policy had learned a useful
+                search strategy rather than memorizing one particular route.
+            </p>
+
+            <p>
+                Across the evaluation set, the reinforcement learning policy
+                reduced average search time by approximately
+                <strong>13%</strong> compared with the greedy baseline.
+            </p>
+
+            <p>
+                The result was particularly important because reinforcement
+                learning was not being used simply to demonstrate that a robot
+                could move. The classical robotics stack already handled that.
+                The improvement came specifically from learning
+                <strong>how to allocate the robot's search time</strong>.
+            </p>
+
+
+            <!-- FIGURE PLACEHOLDER
+                 Suggested figure:
+                 Bar plot:
+                 Nearest unexplored
+                 Probability greedy
+                 Posterior greedy
+                 Maskable PPO
+
+                 Show average search time and/or success rate.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Figure Placeholder — Search Policy Evaluation
+                </div>
+
+                <figcaption>
+                    Comparison of the learned Maskable PPO policy with
+                    heuristic search baselines across 10,000 randomized
+                    evaluation episodes.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             ARCHITECTURE
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>The Final Autonomy Stack</h2>
+
+            <p>
+                By the end of the project, the robot combined several
+                independently complex systems into one autonomy pipeline:
+            </p>
+
+            <pre><code>Intel RealSense D435I
+        ↓
+Isaac ROS Visual SLAM / cuVSLAM
+        ↓
+Robot localization
+        ↓
+NVBlox
+        ↓
+3D reconstruction + navigation map
+        ↓
+Nav2
+        ↓
+Autonomous motion between search locations
+
+RealSense RGB Camera
+        ↓
+YOLOv8 + TensorRT
+        ↓
+Confirmed semantic detections
+        ↓
+Bayesian belief update
+        ↓
+Maskable PPO search policy
+        ↓
+Next search location
+        ↓
+Nav2</code></pre>
+
+            <p>
+                This architecture deliberately separated
+                <strong>perception</strong>,
+                <strong>localization</strong>,
+                <strong>navigation</strong>, and
+                <strong>decision making</strong>. Each subsystem had a clear
+                interface, which made the complete robot substantially easier
+                to debug and improve.
+            </p>
+
+
+            <!-- FIGURE PLACEHOLDER
+                 Suggested figure:
+                 Polished system architecture diagram showing:
+                 RealSense -> cuVSLAM/NVBlox
+                 RealSense RGB -> YOLO
+                 both feeding ROS2/search controller
+                 PPO -> Nav2 -> cmd_vel -> motor controller.
+            -->
+
+            <figure class="project-figure figure-placeholder">
+                <div class="figure-placeholder-content">
+                    Figure Placeholder — Complete Autonomy Architecture
+                </div>
+
+                <figcaption>
+                    End-to-end architecture connecting sensing, GPU-accelerated
+                    perception, localization, mapping, navigation, Bayesian
+                    reasoning, and reinforcement learning.
+                </figcaption>
+            </figure>
+
+        </section>
+
+
+        <!-- =========================================================
+             TAKEAWAYS
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>What I Learned</h2>
+
+            <p>
+                The most important lesson from this project was that applying
+                machine learning to robotics does not necessarily mean
+                replacing the entire autonomy stack with a neural network.
+            </p>
+
+            <p>
+                Visual SLAM was already well suited for estimating motion.
+                NVBlox was well suited for geometric mapping. Nav2 was well
+                suited for collision-aware navigation. YOLO was well suited
+                for semantic perception. Reinforcement learning became useful
+                only after these components transformed the original robotics
+                problem into a compact decision problem: choosing the next
+                place to search.
+            </p>
+
+            <p>
+                Building the complete system also exposed the integration work
+                that is often hidden when robotics algorithms are studied
+                independently. Coordinate frames, camera calibration, topic
+                interfaces, map representations, navigation tuning, inference
+                latency, physical motion, and failure handling all had to work
+                together before improvements in the search policy mattered.
+            </p>
+
+            <p>
+                The final robot demonstrated an end-to-end autonomy pipeline
+                running onboard an NVIDIA Jetson: perceive the environment,
+                localize within it, construct a map, navigate through it,
+                interpret semantic observations, update beliefs, and learn
+                where to search next.
+            </p>
+
+        </section>
+
+
+        <!-- =========================================================
+             FUTURE WORK
+             ========================================================= -->
+
+        <section class="detail-section">
+
+            <h2>Future Improvements</h2>
+
+            <p>
+                The current system represents the apartment using a fixed set
+                of discrete vantage points. A natural extension would allow
+                the robot to generate new observation poses dynamically based
+                on uncertainty, visibility, and expected information gain.
+            </p>
+
+            <p>
+                The semantic belief model could also be expanded beyond a
+                small set of manually defined clue relationships. Learned
+                scene representations or object co-occurrence models could
+                provide richer priors about where an unseen target is likely
+                to appear.
+            </p>
+
+            <p>
+                Finally, search could be extended from a single known apartment
+                to previously unseen environments, where mapping, exploration,
+                semantic reasoning, and target search would need to occur
+                simultaneously.
             </p>
 
         </section>
