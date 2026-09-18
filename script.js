@@ -136,3 +136,70 @@ if (experienceList) {
         experienceList.appendChild(createCard(experience));
     });
 }
+
+function initAboutProfileFollow() {
+    const aboutContainer = document.querySelector(".about-container");
+    const profileCard = document.querySelector(".profile-column");
+
+    if (!aboutContainer || !profileCard) {
+        return;
+    }
+
+    const desktopQuery = window.matchMedia("(min-width: 901px)");
+    const topOffset = 32;
+    let currentOffset = 0;
+    let targetOffset = 0;
+    let animationFrame = null;
+
+    function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    function measureTarget() {
+        if (!desktopQuery.matches) {
+            targetOffset = 0;
+            currentOffset = 0;
+            profileCard.style.transform = "";
+            return;
+        }
+
+        const containerTop = aboutContainer.getBoundingClientRect().top + window.scrollY;
+        const maxOffset = Math.max(0, aboutContainer.offsetHeight - profileCard.offsetHeight);
+
+        targetOffset = clamp(window.scrollY + topOffset - containerTop, 0, maxOffset);
+    }
+
+    function animate() {
+        currentOffset += (targetOffset - currentOffset) * 0.16;
+
+        if (Math.abs(targetOffset - currentOffset) < 0.35) {
+            currentOffset = targetOffset;
+        }
+
+        profileCard.style.transform = currentOffset
+            ? `translate3d(0, ${currentOffset}px, 0)`
+            : "";
+
+        if (currentOffset !== targetOffset) {
+            animationFrame = window.requestAnimationFrame(animate);
+        } else {
+            animationFrame = null;
+        }
+    }
+
+    function update() {
+        measureTarget();
+
+        if (!animationFrame) {
+            animationFrame = window.requestAnimationFrame(animate);
+        }
+    }
+
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    desktopQuery.addEventListener("change", update);
+
+    update();
+}
+
+initAboutProfileFollow();
