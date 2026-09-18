@@ -7,13 +7,13 @@
 }
 
 :root {
-    --site-bg: #1e222b;
+    --site-bg: #171d26;
     --site-surface: #222731;
     --site-surface-raised: #252a34;
     --site-text: #f4f6fb;
     --site-muted: #aeb6c7;
     --site-subtle: #8f98aa;
-    --site-accent: #2f6df6;
+    --site-accent: #c9d0db;
 }
 
 html {
@@ -72,6 +72,8 @@ a {
 
 
 .nav-links a {
+    position: relative;
+
     text-decoration: none;
 
     font-size: 0.95rem;
@@ -81,6 +83,20 @@ a {
     transition: color 0.2s ease;
 }
 
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -24px;
+
+    height: 2px;
+
+    background: transparent;
+
+    transition: background 0.2s ease;
+}
+
 
 .nav-links a:hover {
     color: var(--site-text);
@@ -88,7 +104,11 @@ a {
 
 
 .nav-links a.active {
-    color: var(--site-accent);
+    color: var(--site-text);
+}
+
+.nav-links a.active::after {
+    background: var(--site-accent);
 }
 
 
@@ -97,19 +117,19 @@ a {
    ========================================================= */
 
 .about-container {
-    max-width: 1150px;
+    max-width: 1400px;
 
     margin: 0 auto;
 
-    padding: 60px 40px 100px;
+    padding: 32px 48px 52px;
 
     display: grid;
 
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
 
-    gap: 65px;
+    gap: 28px;
 
-    align-items: start;
+    align-items: stretch;
 }
 
 
@@ -119,12 +139,23 @@ a {
 
 .profile-column {
     text-align: center;
+
+    padding: 56px 38px 48px;
+
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 48%),
+        linear-gradient(160deg, var(--site-surface-raised) 0%, #1b222c 100%);
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 20px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.035),
+        0 18px 40px rgba(0, 0, 0, 0.28);
 }
 
 
 .profile-photo {
-    width: 150px;
-    height: 150px;
+    width: 205px;
+    height: 205px;
 
     object-fit: cover;
     object-position: center;
@@ -133,42 +164,47 @@ a {
 
     display: block;
 
-    margin: 0 auto 22px;
+    margin: 8px auto 28px;
+
+    border: 1px solid rgba(201, 208, 219, 0.24);
+    box-shadow:
+        0 0 0 10px rgba(255, 255, 255, 0.018),
+        0 20px 36px rgba(0, 0, 0, 0.24);
 }
 
 
 .profile-name {
     margin: 0;
 
-    font-size: 1.8rem;
+    font-size: 2rem;
 
-    font-weight: 500;
+    font-weight: 700;
 
     line-height: 1.2;
 
-    color: #ffffff;
+    color: var(--site-text);
 }
 
 
 .profile-subtitle {
-    margin: 12px 0 4px;
+    margin: 18px 0 6px;
 
-    font-size: 0.9rem;
+    font-size: 1.03rem;
 
-    line-height: 1.5;
+    line-height: 1.55;
 
-    color: #b7bdc8;
+    color: #c8ced8;
 }
 
 
 .profile-school {
     margin: 0;
 
-    font-size: 0.9rem;
+    font-size: 1rem;
 
     line-height: 1.5;
 
-    color: #8e96a3;
+    color: var(--site-muted);
 }
 
 
@@ -183,29 +219,51 @@ a {
 
     align-items: center;
 
-    gap: 17px;
+    gap: 24px;
 
-    margin-top: 24px;
+    margin-top: 34px;
+    padding-top: 30px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.065);
 }
 
 
 .profile-links a {
-    color: #2f6df6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    font-size: 1.7rem;
+    width: 54px;
+    height: 54px;
+
+    color: #c5cbd5;
+
+    font-size: 1.55rem;
 
     text-decoration: none;
 
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 14px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.035),
+        0 10px 24px rgba(0, 0, 0, 0.18);
+
     transition:
-        transform 0.2s ease,
-        color 0.2s ease;
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
 }
 
 
 .profile-links a:hover {
-    color: #6d98ff;
+    color: #ffffff;
 
-    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.055);
+    border-color: rgba(255, 255, 255, 0.09);
+
+    transform: translateY(-2px);
 }
 
 
@@ -215,52 +273,80 @@ a {
 
 .biography-column {
     min-width: 0;
+
+    padding: 38px 42px;
+
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 46%),
+        linear-gradient(160deg, var(--site-surface-raised) 0%, #1b222c 100%);
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 20px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.035),
+        0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.about-eyebrow {
+    margin: 3px 0 8px;
+
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    line-height: 1.2;
+    text-transform: uppercase;
+
+    color: var(--site-muted);
 }
 
 
 .biography-title {
-    margin: -8px 0 20px;
+    margin: 0 0 24px;
 
-    font-size: 3rem;
+    font-size: clamp(2.4rem, 3.5vw, 3rem);
 
-    font-weight: 400;
+    font-weight: 700;
 
     line-height: 1.1;
 
-    color: #9ba4b2;
+    color: var(--site-text);
 }
 
 
 .biography-text {
-    font-size: 1.05rem;
+    max-width: 900px;
 
-    line-height: 1.8;
+    font-size: 1.06rem;
 
-    color: #e5e7eb;
+    line-height: 1.72;
+
+    color: #d7dbe2;
 }
 
 
 .biography-text p {
-    margin: 0 0 22px;
+    margin: 0 0 24px;
 }
 
 
 .biography-text strong {
     font-weight: 600;
 
-    color: #ffffff;
+    color: #f2f3f5;
 }
 
 
 .biography-text a {
-    color: #2f6df6;
+    color: #dde1e8;
 
     text-decoration: none;
 }
 
 
 .biography-text a:hover {
+    color: #ffffff;
+
     text-decoration: underline;
+    text-underline-offset: 4px;
 }
 
 
@@ -271,22 +357,25 @@ a {
 .about-details {
     display: grid;
 
-    grid-template-columns: 0.8fr 1.4fr;
+    grid-template-columns: 0.8fr 1.2fr;
 
-    gap: 70px;
+    gap: 40px;
 
-    margin-top: 50px;
+    margin-top: 28px;
+    padding-top: 28px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.065);
 }
 
 
 .about-details h2 {
     margin: 0 0 20px;
 
-    font-size: 1.55rem;
+    font-size: 1.5rem;
 
     font-weight: 600;
 
-    color: #9ba4b2;
+    color: var(--site-muted);
 }
 
 
@@ -297,7 +386,7 @@ a {
 .interests ul {
     margin: 0;
 
-    padding-left: 24px;
+    padding-left: 22px;
 }
 
 
@@ -311,6 +400,10 @@ a {
     color: #e5e7eb;
 }
 
+.interests li::marker {
+    color: #8798b2;
+}
+
 
 /* =========================================================
    EDUCATION
@@ -320,37 +413,52 @@ a {
     display: flex;
 
     flex-direction: column;
+
+    padding-left: 40px;
+
+    border-left: 1px solid rgba(255, 255, 255, 0.055);
 }
 
 
 .education-summary-item {
     display: flex;
 
-    gap: 16px;
+    gap: 18px;
 
     margin-bottom: 24px;
 }
 
 
 .education-summary-item > i {
-    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    font-size: 1.25rem;
+    flex: 0 0 54px;
+    width: 54px;
+    height: 54px;
+    margin-top: 0;
 
-    color: #e5e7eb;
+    font-size: 1.3rem;
+
+    color: #c5cbd5;
+
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 14px;
 }
 
 
 .education-summary-item h3 {
     margin: 0 0 5px;
 
-    font-size: 0.98rem;
+    font-size: 1.02rem;
 
     font-weight: 600;
 
     line-height: 1.4;
 
-    color: #ffffff;
+    color: var(--site-text);
 }
 
 
@@ -891,34 +999,40 @@ a {
 
 
     .about-container {
-        grid-template-columns: 180px minmax(0, 1fr);
+        max-width: 760px;
 
-        gap: 45px;
+        grid-template-columns: 1fr;
+
+        gap: 24px;
 
         padding-left: 30px;
         padding-right: 30px;
     }
 
+    .profile-column {
+        padding: 44px 34px 38px;
+    }
+
 
     .profile-photo {
-        width: 130px;
-        height: 130px;
+        width: 190px;
+        height: 190px;
     }
 
 
     .profile-name {
-        font-size: 1.6rem;
+        font-size: 1.9rem;
     }
 
 
     .profile-subtitle,
     .profile-school {
-        font-size: 0.85rem;
+        font-size: 1rem;
     }
 
 
     .biography-title {
-        font-size: 2.7rem;
+        font-size: 2.6rem;
     }
 
 
@@ -926,6 +1040,12 @@ a {
         grid-template-columns: 1fr;
 
         gap: 35px;
+    }
+
+    .education-summary {
+        padding-left: 0;
+
+        border-left: 0;
     }
 
 
@@ -981,32 +1101,76 @@ a {
         justify-content: center;
     }
 
+    .nav-links a::after {
+        bottom: -8px;
+    }
+
 
     .about-container {
+        width: auto;
+        max-width: none;
         display: block;
 
-        padding: 40px 22px 80px;
+        padding: 28px 44px 80px 22px;
+        overflow: hidden;
+    }
+
+    .about-container * {
+        min-width: 0;
     }
 
 
     .profile-column {
-        margin-bottom: 50px;
+        width: 324px !important;
+        max-width: 100% !important;
+        margin-bottom: 22px;
+        padding: 34px 20px 30px;
+        overflow: hidden;
     }
 
 
     .profile-photo {
-        width: 130px;
-        height: 130px;
+        width: 168px;
+        height: 168px;
+
+        margin-bottom: 24px;
     }
 
 
     .profile-name {
-        font-size: 1.65rem;
+        font-size: 1.85rem;
+    }
+
+    .profile-subtitle,
+    .profile-school {
+        width: min(100%, 280px);
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+
+        overflow-wrap: normal;
     }
 
 
     .profile-links a {
-        font-size: 1.55rem;
+        width: 50px;
+        height: 50px;
+
+        font-size: 1.35rem;
+    }
+
+    .profile-links {
+        gap: 16px;
+
+        margin-top: 28px;
+        padding-top: 26px;
+    }
+
+    .biography-column {
+        width: 324px !important;
+        max-width: 100% !important;
+        padding: 30px 20px;
+        overflow: hidden;
     }
 
 
@@ -1018,14 +1182,33 @@ a {
 
 
     .biography-text {
-        font-size: 1rem;
+        font-size: 0.98rem;
 
         line-height: 1.75;
+        overflow-wrap: normal;
+        word-break: normal;
     }
 
 
     .about-details {
-        margin-top: 45px;
+        margin-top: 24px;
+        padding-top: 24px;
+    }
+
+    .about-details h2 {
+        font-size: 1.35rem;
+    }
+
+    .education-summary-item {
+        gap: 14px;
+    }
+
+    .education-summary-item > i {
+        flex-basis: 48px;
+        width: 48px;
+        height: 48px;
+
+        font-size: 1.15rem;
     }
 
 
