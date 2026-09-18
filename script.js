@@ -30,21 +30,49 @@ const projects = [
     }
 ];
 
-function createProjectCard(project) {
+const experiences = [
+    {
+        date: "MAY 2026 \u2013 AUGUST 2026 | PITTSBURGH, PA",
+        title: "Neuromechatronics Lab",
+        tags: ["Machine Learning Research Assistant", "Deep Learning", "Signal Processing", "Prosthetics"],
+        description: "Developed multi-task deep learning methods for decoding hand gestures and continuous grip force from 256-channel high-density EMG signals.",
+        href: "experience/nml.html"
+    },
+    {
+        date: "JANUARY 2023 \u2013 MAY 2026 | DURHAM, NC",
+        title: "Brain Stimulation Engineering Lab",
+        tags: ["Neural Research Engineer", "Computational Neuroscience", "Biophysical Modeling", "Image Processing", "Machine Learning", "High-Performance Computing"],
+        description: "Developed computational modeling pipelines to study white-matter axon responses to non-invasive brain stimulation therapies, including Transcranial Magnetic Stimulation and Electroconvulsive Therapy. Integrated high-performance computing and machine learning to accelerate large-scale neural simulations, analysis, and visualization.",
+        href: "experience/bsel.html",
+        links: [
+            "Publication: In Progress",
+            "Code Repository: GitHub"
+        ]
+    },
+    {
+        date: "MAY 2023 \u2013 AUGUST 2023 | SEATTLE, WA",
+        title: "Center for Neurotechnology \u2013 University of Washington",
+        tags: ["Machine Learning Intern", "Signal Processing", "Machine Learning", "Neurotechnology"],
+        description: "Investigated neural signatures of consciousness during anesthesia induction and emergence to support improved monitoring of patient state. Developed machine learning and signal-processing methods to classify stages of consciousness from intracranial EEG recordings.",
+        href: "experience/cnt-uw.html"
+    }
+];
+
+function createCard(item) {
     const card = document.createElement("a");
     card.className = "project-card";
-    card.href = project.href;
-    card.setAttribute("aria-label", `${project.title} project details`);
+    card.href = item.href;
+    card.setAttribute("aria-label", `${item.title} details`);
 
     const media = document.createElement("span");
     media.className = "project-card-media";
 
-    if (project.image) {
+    if (item.image) {
         media.classList.add("project-card-media-image");
 
         const image = document.createElement("img");
-        image.src = project.image.src;
-        image.alt = project.image.alt;
+        image.src = item.image.src;
+        image.alt = item.image.alt;
         image.loading = "lazy";
 
         media.appendChild(image);
@@ -61,21 +89,28 @@ function createProjectCard(project) {
 
     const date = document.createElement("span");
     date.className = "project-card-date";
-    date.textContent = project.date;
+    date.textContent = item.date;
 
     const title = document.createElement("span");
     title.className = "project-card-title";
-    title.textContent = project.title;
+    title.textContent = item.title;
 
     const tags = document.createElement("span");
     tags.className = "project-card-tags";
-    tags.textContent = project.tags.join(" \u2022 ");
+    tags.textContent = item.tags.join(" \u2022 ");
 
     const description = document.createElement("span");
     description.className = "project-card-description";
-    description.textContent = project.description;
+    description.textContent = item.description;
 
     body.append(date, title, tags, description);
+
+    if (item.links) {
+        const links = document.createElement("span");
+        links.className = "project-card-links";
+        links.textContent = item.links.join(" \u2022 ");
+        body.appendChild(links);
+    }
 
     const arrow = document.createElement("span");
     arrow.className = "project-card-arrow";
@@ -88,9 +123,16 @@ function createProjectCard(project) {
 }
 
 const projectList = document.getElementById("project-card-list");
+const experienceList = document.getElementById("experience-card-list");
 
 if (projectList) {
     projects.forEach((project) => {
-        projectList.appendChild(createProjectCard(project));
+        projectList.appendChild(createCard(project));
+    });
+}
+
+if (experienceList) {
+    experiences.forEach((experience) => {
+        experienceList.appendChild(createCard(experience));
     });
 }

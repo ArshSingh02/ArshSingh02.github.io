@@ -606,6 +606,17 @@ a {
     color: #d9dee8;
 }
 
+.project-card-links {
+    display: block;
+
+    margin-top: 14px;
+
+    font-size: 0.95rem;
+    line-height: 1.5;
+
+    color: var(--site-muted);
+}
+
 .project-card-arrow {
     display: flex;
     align-items: center;
