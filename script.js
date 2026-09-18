@@ -11,14 +11,22 @@ const projects = [
         title: "Embedded ECG & Temperature Monitor",
         tags: ["C", "Zephyr RTOS", "Embedded Systems", "Bluetooth Low Energy", "ADC/PWM/GPIO", "Multithreading"],
         description: "Developed an embedded physiological monitoring system for real-time ECG acquisition, heart-rate computation, temperature sensing, battery monitoring, and wireless BLE communication.",
-        href: "projects/embedded.html"
+        href: "projects/embedded.html",
+        image: {
+            src: "projects/images/embedded/heart_rate_validation.png",
+            alt: "Heart rate validation results for the embedded ECG and temperature monitor"
+        }
     },
     {
         date: "APRIL 2024",
         title: "VVI Pacemaker",
         tags: ["C/C++", "Embedded Systems", "Analog Circuit Design", "Signal Processing", "ADC", "ECG Acquisition"],
         description: "Designed and built a VVI pacemaker with custom analog sensing and stimulation circuitry to detect ventricular activity and deliver pacing when intrinsic heart rate fell below a programmed threshold.",
-        href: "projects/pacemaker.html"
+        href: "projects/pacemaker.html",
+        image: {
+            src: "projects/images/pacemaker/pacemaker-stimulation-output.png",
+            alt: "Stimulation output waveform for the VVI pacemaker"
+        }
     }
 ];
 
@@ -30,11 +38,23 @@ function createProjectCard(project) {
 
     const media = document.createElement("span");
     media.className = "project-card-media";
-    media.setAttribute("aria-hidden", "true");
 
-    const icon = document.createElement("span");
-    icon.className = "project-placeholder-icon";
-    media.appendChild(icon);
+    if (project.image) {
+        media.classList.add("project-card-media-image");
+
+        const image = document.createElement("img");
+        image.src = project.image.src;
+        image.alt = project.image.alt;
+        image.loading = "lazy";
+
+        media.appendChild(image);
+    } else {
+        media.setAttribute("aria-hidden", "true");
+
+        const icon = document.createElement("span");
+        icon.className = "project-placeholder-icon";
+        media.appendChild(icon);
+    }
 
     const body = document.createElement("span");
     body.className = "project-card-body";

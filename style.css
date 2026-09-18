@@ -6,6 +6,16 @@
     box-sizing: border-box;
 }
 
+:root {
+    --site-bg: #1e222b;
+    --site-surface: #222731;
+    --site-surface-raised: #252a34;
+    --site-text: #f4f6fb;
+    --site-muted: #aeb6c7;
+    --site-subtle: #8f98aa;
+    --site-accent: #2f6df6;
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -13,10 +23,10 @@ html {
 body {
     margin: 0;
 
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-    background-color: #242735;
-    color: #ffffff;
+    background-color: var(--site-bg);
+    color: var(--site-text);
 }
 
 a {
@@ -39,7 +49,7 @@ a {
 
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
-    background-color: #242735;
+    background-color: var(--site-bg);
 }
 
 
@@ -49,7 +59,7 @@ a {
     font-size: 1.25rem;
     font-weight: 600;
 
-    color: #ffffff;
+    color: var(--site-text);
 }
 
 
@@ -66,19 +76,19 @@ a {
 
     font-size: 0.95rem;
 
-    color: #aeb5c0;
+    color: var(--site-muted);
 
     transition: color 0.2s ease;
 }
 
 
 .nav-links a:hover {
-    color: #ffffff;
+    color: var(--site-text);
 }
 
 
 .nav-links a.active {
-    color: #2f6df6;
+    color: var(--site-accent);
 }
 
 
@@ -392,12 +402,12 @@ a {
 .projects-page .page-title {
     margin-bottom: 12px;
 
-    font-size: clamp(3rem, 6vw, 5rem);
-    font-weight: 700;
-    line-height: 0.95;
+    font-size: clamp(3rem, 5.4vw, 4.6rem);
+    font-weight: 680;
+    line-height: 1;
     letter-spacing: 0;
 
-    color: #f4f6fb;
+    color: var(--site-text);
     text-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
 }
 
@@ -407,7 +417,7 @@ a {
     font-size: 1.45rem;
     line-height: 1.45;
 
-    color: #aeb6c7;
+    color: var(--site-muted);
 }
 
 .project-card-list {
@@ -433,7 +443,7 @@ a {
 
     background:
         linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 42%),
-        linear-gradient(160deg, #252a34 0%, #1f232c 100%);
+        linear-gradient(160deg, var(--site-surface-raised) 0%, var(--site-surface) 100%);
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 18px;
     box-shadow:
@@ -481,6 +491,20 @@ a {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.05),
         inset 0 -18px 38px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.project-card-media img {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: fill;
+}
+
+.project-card-media-image {
+    background: #11161c;
 }
 
 .project-placeholder-icon {
@@ -540,7 +564,7 @@ a {
     letter-spacing: 0.22em;
     line-height: 1.2;
 
-    color: #a7afc0;
+    color: var(--site-muted);
 }
 
 .project-card-title {
@@ -549,11 +573,11 @@ a {
     max-width: 100%;
     margin-bottom: 14px;
 
-    font-size: clamp(1.7rem, 2.55vw, 2.2rem);
-    font-weight: 700;
-    line-height: 1.16;
+    font-size: clamp(1.55rem, 2.05vw, 1.92rem);
+    font-weight: 650;
+    line-height: 1.2;
 
-    color: #f6f7fb;
+    color: var(--site-text);
 }
 
 .project-card-tags {
@@ -566,7 +590,7 @@ a {
     line-height: 1.45;
     overflow-wrap: anywhere;
 
-    color: #aab2c2;
+    color: var(--site-muted);
 }
 
 .project-card-description {
@@ -579,7 +603,7 @@ a {
     line-height: 1.58;
     overflow-wrap: anywhere;
 
-    color: #d8dde8;
+    color: #d9dee8;
 }
 
 .project-card-arrow {
