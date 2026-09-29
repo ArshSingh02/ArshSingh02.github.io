@@ -50,10 +50,10 @@ const projects = [
 
 const experiences = [
     {
+        role: "Graduate Research Assistant",
         date: "MAY 2026 – AUGUST 2026 | PITTSBURGH, PA",
         title: "Neuromechatronics Lab",
         tags: [
-            "Machine Learning Research Assistant",
             "Deep Learning",
             "Signal Processing",
             "Prosthetics"
@@ -61,29 +61,29 @@ const experiences = [
         description: "Developed multi-task deep learning methods for decoding hand gestures and continuous grip force from 256-channel high-density EMG signals."
     },
     {
+        role: "Neural Research Engineer",
         date: "JANUARY 2023 – MAY 2026 | DURHAM, NC",
         title: "Brain Stimulation Engineering Lab",
         tags: [
-            "Neural Research Engineer",
             "Computational Neuroscience",
             "Biophysical Modeling",
             "Image Processing",
             "Machine Learning",
             "High-Performance Computing"
         ],
-        description: "Developed computational modeling pipelines to study white-matter axon responses to non-invasive brain stimulation therapies, including Transcranial Magnetic Stimulation and Electroconvulsive Therapy. Integrated high-performance computing and machine learning to accelerate large-scale neural simulations, analysis, and visualization.",
+        description: "Developed computational modeling pipelines to study white-matter axon responses to non-invasive brain stimulation therapies. Integrated high-performance computing and machine learning to accelerate large-scale neural simulations.",
         links: [
             "Publication: In Progress",
             "Code Repository: GitHub"
         ]
     },
     {
+        role: "Machine Learning Intern",
         date: "MAY 2023 – AUGUST 2023 | SEATTLE, WA",
         title: "Center for Neurotechnology – University of Washington",
         tags: [
-            "Machine Learning Intern",
-            "Signal Processing",
             "Machine Learning",
+            "Signal Processing",
             "Neurotechnology"
         ],
         description: "Investigated neural signatures of consciousness during anesthesia induction and emergence to support improved monitoring of patient state. Developed machine learning and signal-processing methods to classify stages of consciousness from intracranial EEG recordings."
@@ -118,9 +118,29 @@ function createCard(item) {
     const body = document.createElement("span");
     body.className = "project-card-body";
 
-    const date = document.createElement("span");
-    date.className = "project-card-date";
-    date.textContent = item.date;
+    let header = null;
+
+    if (item.role) {
+        header = document.createElement("span");
+        header.className = "experience-header";
+
+        const role = document.createElement("span");
+        role.className = "experience-role";
+        role.textContent = item.role;
+
+        const date = document.createElement("span");
+        date.className = "project-card-date experience-date";
+        date.textContent = item.date;
+
+        header.append(
+            role,
+            date
+        );
+    } else {
+        header = document.createElement("span");
+        header.className = "project-card-date";
+        header.textContent = item.date;
+    }
 
     const title = document.createElement("span");
     title.className = "project-card-title";
@@ -135,7 +155,7 @@ function createCard(item) {
     description.textContent = item.description;
 
     body.append(
-        date,
+        header,
         title,
         tags,
         description

@@ -554,6 +554,22 @@ a {
     color: #8e96a3;
     text-align: right;
 }
+
+.experience-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.experience-role {
+    text-align: left;
+}
+
+.experience-date {
+    text-align: right;
+}
+
 /* Experience description */
 .experience-item > p {
     margin: 0;
