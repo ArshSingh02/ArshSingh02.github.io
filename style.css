@@ -557,7 +557,9 @@ a {
 
 .experience-role {
     text-align: left;
+    margin-bottom: 12px;
 }
+
 
 /* Experience description */
 .experience-item > p {

@@ -65,7 +65,6 @@ const experiences = [
         date: "JANUARY 2023 – MAY 2026 | DURHAM, NC",
         title: "Brain Stimulation Engineering Lab",
         tags: [
-            "Computational Neuroscience",
             "Biophysical Modeling",
             "Image Processing",
             "Machine Learning",
