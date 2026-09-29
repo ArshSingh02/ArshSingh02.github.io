@@ -118,33 +118,13 @@ function createCard(item) {
     const body = document.createElement("span");
     body.className = "project-card-body";
 
-    let header = null;
-
-    if (item.role) {
-        header = document.createElement("span");
-        header.className = "experience-header";
-
-        const role = document.createElement("span");
-        role.className = "experience-role";
-        role.textContent = item.role;
-
-        const date = document.createElement("span");
-        date.className = "project-card-date experience-date";
-        date.textContent = item.date;
-
-        header.append(
-            role,
-            date
-        );
-    } else {
-        header = document.createElement("span");
-        header.className = "project-card-date";
-        header.textContent = item.date;
-    }
-
     const title = document.createElement("span");
     title.className = "project-card-title";
     title.textContent = item.title;
+
+    const date = document.createElement("span");
+    date.className = "project-card-date";
+    date.textContent = item.date;
 
     const tags = document.createElement("span");
     tags.className = "project-card-tags";
@@ -154,12 +134,26 @@ function createCard(item) {
     description.className = "project-card-description";
     description.textContent = item.description;
 
-    body.append(
-        header,
-        title,
-        tags,
-        description
-    );
+    if (item.role) {
+        const role = document.createElement("span");
+        role.className = "experience-role";
+        role.textContent = item.role;
+
+        body.append(
+            title,
+            date,
+            role,
+            tags,
+            description
+        );
+    } else {
+        body.append(
+            date,
+            title,
+            tags,
+            description
+        );
+    }
 
     if (item.links) {
         const links = document.createElement("span");
