@@ -2,16 +2,28 @@ const projects = [
     {
         date: "JULY 2026",
         title: "Reinforcement Learning Search and Rescue Robot",
-        tags: ["C++", "Python", "ROS 2", "Isaac ROS", "Reinforcement Learning", "Computer Vision"],
-        description: "Developed an autonomous mobile robot using Isaac ROS and reinforcement learning for efficient autonomous object search in indoor environments.",
-        href: "projects/robot.html"
+        tags: [
+            "C++",
+            "Python",
+            "ROS 2",
+            "Isaac ROS",
+            "Reinforcement Learning",
+            "Computer Vision"
+        ],
+        description: "Developed an autonomous mobile robot using Isaac ROS and reinforcement learning for efficient autonomous object search in indoor environments."
     },
     {
         date: "MAY 2025",
         title: "Embedded ECG & Temperature Monitor",
-        tags: ["C", "Zephyr RTOS", "Embedded Systems", "Bluetooth Low Energy", "ADC/PWM/GPIO", "Multithreading"],
+        tags: [
+            "C",
+            "Zephyr RTOS",
+            "Embedded Systems",
+            "Bluetooth Low Energy",
+            "ADC/PWM/GPIO",
+            "Multithreading"
+        ],
         description: "Developed an embedded physiological monitoring system for real-time ECG acquisition, heart-rate computation, temperature sensing, battery monitoring, and wireless BLE communication.",
-        href: "projects/embedded.html",
         image: {
             src: "projects/images/embedded/heart_rate_validation.png",
             alt: "Heart rate validation results for the embedded ECG and temperature monitor"
@@ -20,9 +32,15 @@ const projects = [
     {
         date: "APRIL 2024",
         title: "VVI Pacemaker",
-        tags: ["C/C++", "Embedded Systems", "Analog Circuit Design", "Signal Processing", "ADC", "ECG Acquisition"],
+        tags: [
+            "C/C++",
+            "Embedded Systems",
+            "Analog Circuit Design",
+            "Signal Processing",
+            "ADC",
+            "ECG Acquisition"
+        ],
         description: "Designed and built a VVI pacemaker with custom analog sensing and stimulation circuitry to detect ventricular activity and deliver pacing when intrinsic heart rate fell below a programmed threshold.",
-        href: "projects/pacemaker.html",
         image: {
             src: "projects/images/pacemaker/pacemaker-stimulation-output.png",
             alt: "Stimulation output waveform for the VVI pacemaker"
@@ -32,37 +50,49 @@ const projects = [
 
 const experiences = [
     {
-        date: "MAY 2026 \u2013 AUGUST 2026 | PITTSBURGH, PA",
+        date: "MAY 2026 – AUGUST 2026 | PITTSBURGH, PA",
         title: "Neuromechatronics Lab",
-        tags: ["Machine Learning Research Assistant", "Deep Learning", "Signal Processing", "Prosthetics"],
-        description: "Developed multi-task deep learning methods for decoding hand gestures and continuous grip force from 256-channel high-density EMG signals.",
-        href: "experience/nml.html"
+        tags: [
+            "Machine Learning Research Assistant",
+            "Deep Learning",
+            "Signal Processing",
+            "Prosthetics"
+        ],
+        description: "Developed multi-task deep learning methods for decoding hand gestures and continuous grip force from 256-channel high-density EMG signals."
     },
     {
-        date: "JANUARY 2023 \u2013 MAY 2026 | DURHAM, NC",
+        date: "JANUARY 2023 – MAY 2026 | DURHAM, NC",
         title: "Brain Stimulation Engineering Lab",
-        tags: ["Neural Research Engineer", "Computational Neuroscience", "Biophysical Modeling", "Image Processing", "Machine Learning", "High-Performance Computing"],
+        tags: [
+            "Neural Research Engineer",
+            "Computational Neuroscience",
+            "Biophysical Modeling",
+            "Image Processing",
+            "Machine Learning",
+            "High-Performance Computing"
+        ],
         description: "Developed computational modeling pipelines to study white-matter axon responses to non-invasive brain stimulation therapies, including Transcranial Magnetic Stimulation and Electroconvulsive Therapy. Integrated high-performance computing and machine learning to accelerate large-scale neural simulations, analysis, and visualization.",
-        href: "experience/bsel.html",
         links: [
             "Publication: In Progress",
             "Code Repository: GitHub"
         ]
     },
     {
-        date: "MAY 2023 \u2013 AUGUST 2023 | SEATTLE, WA",
-        title: "Center for Neurotechnology \u2013 University of Washington",
-        tags: ["Machine Learning Intern", "Signal Processing", "Machine Learning", "Neurotechnology"],
-        description: "Investigated neural signatures of consciousness during anesthesia induction and emergence to support improved monitoring of patient state. Developed machine learning and signal-processing methods to classify stages of consciousness from intracranial EEG recordings.",
-        href: "experience/cnt-uw.html"
+        date: "MAY 2023 – AUGUST 2023 | SEATTLE, WA",
+        title: "Center for Neurotechnology – University of Washington",
+        tags: [
+            "Machine Learning Intern",
+            "Signal Processing",
+            "Machine Learning",
+            "Neurotechnology"
+        ],
+        description: "Investigated neural signatures of consciousness during anesthesia induction and emergence to support improved monitoring of patient state. Developed machine learning and signal-processing methods to classify stages of consciousness from intracranial EEG recordings."
     }
 ];
 
 function createCard(item) {
-    const card = document.createElement("a");
+    const card = document.createElement("div");
     card.className = "project-card";
-    card.href = item.href;
-    card.setAttribute("aria-label", `${item.title} details`);
 
     const media = document.createElement("span");
     media.className = "project-card-media";
@@ -81,6 +111,7 @@ function createCard(item) {
 
         const icon = document.createElement("span");
         icon.className = "project-placeholder-icon";
+
         media.appendChild(icon);
     }
 
@@ -97,27 +128,31 @@ function createCard(item) {
 
     const tags = document.createElement("span");
     tags.className = "project-card-tags";
-    tags.textContent = item.tags.join(" \u2022 ");
+    tags.textContent = item.tags.join(" • ");
 
     const description = document.createElement("span");
     description.className = "project-card-description";
     description.textContent = item.description;
 
-    body.append(date, title, tags, description);
+    body.append(
+        date,
+        title,
+        tags,
+        description
+    );
 
     if (item.links) {
         const links = document.createElement("span");
         links.className = "project-card-links";
-        links.textContent = item.links.join(" \u2022 ");
+        links.textContent = item.links.join(" • ");
+
         body.appendChild(links);
     }
 
-    const arrow = document.createElement("span");
-    arrow.className = "project-card-arrow";
-    arrow.setAttribute("aria-hidden", "true");
-    arrow.textContent = "\u2192";
-
-    card.append(media, body, arrow);
+    card.append(
+        media,
+        body
+    );
 
     return card;
 }
@@ -147,6 +182,7 @@ function initAboutProfileFollow() {
 
     const desktopQuery = window.matchMedia("(min-width: 901px)");
     const topOffset = 32;
+
     let currentOffset = 0;
     let targetOffset = 0;
     let animationFrame = null;
@@ -163,14 +199,24 @@ function initAboutProfileFollow() {
             return;
         }
 
-        const containerTop = aboutContainer.getBoundingClientRect().top + window.scrollY;
-        const maxOffset = Math.max(0, aboutContainer.offsetHeight - profileCard.offsetHeight);
+        const containerTop =
+            aboutContainer.getBoundingClientRect().top + window.scrollY;
 
-        targetOffset = clamp(window.scrollY + topOffset - containerTop, 0, maxOffset);
+        const maxOffset = Math.max(
+            0,
+            aboutContainer.offsetHeight - profileCard.offsetHeight
+        );
+
+        targetOffset = clamp(
+            window.scrollY + topOffset - containerTop,
+            0,
+            maxOffset
+        );
     }
 
     function animate() {
-        currentOffset += (targetOffset - currentOffset) * 0.16;
+        currentOffset +=
+            (targetOffset - currentOffset) * 0.16;
 
         if (Math.abs(targetOffset - currentOffset) < 0.35) {
             currentOffset = targetOffset;
@@ -181,7 +227,8 @@ function initAboutProfileFollow() {
             : "";
 
         if (currentOffset !== targetOffset) {
-            animationFrame = window.requestAnimationFrame(animate);
+            animationFrame =
+                window.requestAnimationFrame(animate);
         } else {
             animationFrame = null;
         }
@@ -191,13 +238,26 @@ function initAboutProfileFollow() {
         measureTarget();
 
         if (!animationFrame) {
-            animationFrame = window.requestAnimationFrame(animate);
+            animationFrame =
+                window.requestAnimationFrame(animate);
         }
     }
 
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    desktopQuery.addEventListener("change", update);
+    window.addEventListener(
+        "scroll",
+        update,
+        { passive: true }
+    );
+
+    window.addEventListener(
+        "resize",
+        update
+    );
+
+    desktopQuery.addEventListener(
+        "change",
+        update
+    );
 
     update();
 }
